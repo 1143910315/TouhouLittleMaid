@@ -81,6 +81,16 @@ public class GeneralConfig {
         @Config.Name("OwnerMaxMaidNum")
         @Config.RangeInt(min = 0)
         public int ownerMaxMaidNum = Integer.MAX_VALUE;
+
+        @Config.Comment("Give a init maid for player first join.")
+        @Config.LangKey("config.touhou_little_maid.maid_config.give_init_maid")
+        @Config.Name("GiveInitMaid")
+        public boolean giveInitMaid = true;
+
+        @Config.Comment("Spawn smart slab in loot chest.")
+        @Config.LangKey("config.touhou_little_maid.maid_config.spawn_slab_in_loot_chest")
+        @Config.Name("SpawnSlabInLootChest")
+        public boolean spawnSlabInLootChest = true;
     }
 
     public static class VanillaConfig {
@@ -189,6 +199,11 @@ public class GeneralConfig {
         @Config.LangKey("config.touhou_little_maid.misc_config.give_guide_book_first")
         @Config.Name("GiveGuideBookFirst")
         public boolean giveGuideBookFirst = true;
+
+        @Config.Comment("Whether to enable fast rendering, the GUI will no longer display 3D icons after enabling?")
+        @Config.LangKey("config.touhou_little_maid.misc_config.fast_rendering")
+        @Config.Name("FastRendering")
+        public boolean fastRendering = false;
     }
 
     public static class GashaponConfig {
@@ -244,6 +259,12 @@ public class GeneralConfig {
         @Config.LangKey("config.touhou_little_maid.music_config.receive_music")
         @Config.Name("ReceiveMusic")
         public Boolean receiveMusic = true;
+
+        @Config.Comment("Maximum music list count")
+        @Config.LangKey("config.touhou_little_maid.music_config.music_list_count")
+        @Config.Name("MusicListCount")
+        @Config.RangeInt(min = 6)
+        public int musicListCount = 20;
     }
 
     /**

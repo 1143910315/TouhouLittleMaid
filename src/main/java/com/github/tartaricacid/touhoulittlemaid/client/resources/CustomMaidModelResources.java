@@ -7,7 +7,6 @@ import com.google.common.collect.Maps;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
-import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
@@ -20,7 +19,6 @@ public class CustomMaidModelResources {
     private HashMap<String, EntityModelJson> idModelMap;
     private HashMap<String, MaidModelInfo> idInfoMap;
     private HashMap<String, List<Object>> idAnimationMap;
-    private HashMap<String, String> idDebugAnimationFile;
 
     private HashMap<String, ModelData> easterEggNormalTagModelMap;
     private HashMap<String, ModelData> easterEggEncryptTagModelMap;
@@ -34,7 +32,6 @@ public class CustomMaidModelResources {
         this.idModelMap = idToModel;
         this.idInfoMap = idToInfo;
         this.idAnimationMap = idAnimationMap;
-        this.idDebugAnimationFile = Maps.newHashMap();
         this.easterEggNormalTagModelMap = Maps.newHashMap();
         this.easterEggEncryptTagModelMap = Maps.newHashMap();
     }
@@ -76,19 +73,6 @@ public class CustomMaidModelResources {
         this.idAnimationMap.put(modelId, animationJs);
     }
 
-    public void putDebugAnimation(String modelId, String debugAnimationFilePath) {
-        this.idDebugAnimationFile.put(modelId, debugAnimationFilePath);
-    }
-
-    public void removeDebugAnimation(String modelId) {
-        this.idDebugAnimationFile.remove(modelId);
-    }
-
-    @Nullable
-    public String getDebugAnimationFilePath(String modelId) {
-        return this.idDebugAnimationFile.get(modelId);
-    }
-
     public Optional<EntityModelJson> getModel(String modelId) {
         return Optional.ofNullable(idModelMap.get(modelId));
     }
@@ -110,6 +94,10 @@ public class CustomMaidModelResources {
 
     public Optional<MaidModelInfo> getInfo(String modelId) {
         return Optional.ofNullable(idInfoMap.get(modelId));
+    }
+
+    public boolean containsInfo(String modelId) {
+        return idInfoMap.containsKey(modelId);
     }
 
     public Optional<ModelData> getEasterEggNormalTagModel(String tag) {

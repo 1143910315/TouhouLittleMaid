@@ -45,7 +45,6 @@ public final class MaidItems {
     public static Item TOMBSTONE_BAUBLE;
     @GameRegistry.ObjectHolder(TouhouLittleMaid.MOD_ID + ":" + "nimble_fabric")
     public static Item NIMBLE_FABRIC;
-
     @GameRegistry.ObjectHolder(TouhouLittleMaid.MOD_ID + ":" + "marisa_broom")
     public static Item MARISA_BROOM;
     @GameRegistry.ObjectHolder(TouhouLittleMaid.MOD_ID + ":" + "camera")
@@ -92,6 +91,12 @@ public final class MaidItems {
     public static Item EXTINGUISHER;
     @GameRegistry.ObjectHolder(TouhouLittleMaid.MOD_ID + ":" + "power_point")
     public static Item POWER_POINT;
+    @GameRegistry.ObjectHolder(TouhouLittleMaid.MOD_ID + ":" + "maid_bed")
+    public static Item MAID_BED;
+    @GameRegistry.ObjectHolder(TouhouLittleMaid.MOD_ID + ":" + "maid_joy")
+    public static Item MAID_JOY;
+    @GameRegistry.ObjectHolder(TouhouLittleMaid.MOD_ID + ":" + "smart_slab")
+    public static Item SMART_SLAB;
 
     public static CreativeTabs MAIN_TABS = new MaidCreativeTabs("main") {
         @SideOnly(Side.CLIENT)
@@ -131,13 +136,6 @@ public final class MaidItems {
         @Override
         public ItemStack getIcon() {
             return CHAIR.getDefaultInstance();
-        }
-    };
-    public static CreativeTabs SPELL_CARD_TABS = new MaidCreativeTabs("spell_card") {
-        @SideOnly(Side.CLIENT)
-        @Override
-        public ItemStack getIcon() {
-            return SPELL_CARD.getDefaultInstance();
         }
     };
     public static CreativeTabs MODEL_COUPON_TABS = new MaidCreativeTabs("model_coupon") {
@@ -185,6 +183,9 @@ public final class MaidItems {
         event.getRegistry().register(new ItemChisel().setRegistryName("chisel"));
         event.getRegistry().register(new ItemExtinguisher().setRegistryName("extinguisher"));
         event.getRegistry().register(new ItemPowerPoint().setRegistryName("power_point"));
+        event.getRegistry().register(new ItemMaidBed().setRegistryName("maid_bed"));
+        event.getRegistry().register(new ItemMaidJoy().setRegistryName("maid_joy"));
+        event.getRegistry().register(new ItemSmartSlab().setRegistryName("smart_slab"));
 
         event.getRegistry().register(new ItemMaidVehicle().setRegistryName("maid_vehicle"));
         event.getRegistry().register(new ItemBlock(MaidBlocks.GRID).setRegistryName("grid"));

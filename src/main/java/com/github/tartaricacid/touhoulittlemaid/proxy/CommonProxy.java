@@ -12,6 +12,7 @@ import com.github.tartaricacid.touhoulittlemaid.client.resources.pojo.CustomMode
 import com.github.tartaricacid.touhoulittlemaid.client.resources.pojo.MaidModelInfo;
 import com.github.tartaricacid.touhoulittlemaid.command.MainCommand;
 import com.github.tartaricacid.touhoulittlemaid.command.ReloadDrawCommand;
+import com.github.tartaricacid.touhoulittlemaid.command.ReloadServerPackCommand;
 import com.github.tartaricacid.touhoulittlemaid.command.ReloadSpellCardCommand;
 import com.github.tartaricacid.touhoulittlemaid.compat.crafttweaker.AltarZen;
 import com.github.tartaricacid.touhoulittlemaid.compat.neat.NeatCompat;
@@ -19,6 +20,8 @@ import com.github.tartaricacid.touhoulittlemaid.compat.patchouli.MultiblockRegis
 import com.github.tartaricacid.touhoulittlemaid.compat.theoneprobe.TheOneProbeInfo;
 import com.github.tartaricacid.touhoulittlemaid.crafting.AltarRecipesManager;
 import com.github.tartaricacid.touhoulittlemaid.danmaku.CustomSpellCardManger;
+import com.github.tartaricacid.touhoulittlemaid.draw.SendToClientDrawMessage;
+import com.github.tartaricacid.touhoulittlemaid.draw.SendToServerDrawMessage;
 import com.github.tartaricacid.touhoulittlemaid.entity.item.*;
 import com.github.tartaricacid.touhoulittlemaid.entity.monster.EntityFairy;
 import com.github.tartaricacid.touhoulittlemaid.entity.monster.EntityRinnosuke;
@@ -27,12 +30,17 @@ import com.github.tartaricacid.touhoulittlemaid.entity.projectile.EntityDanmaku;
 import com.github.tartaricacid.touhoulittlemaid.init.MaidItems;
 import com.github.tartaricacid.touhoulittlemaid.internal.task.*;
 import com.github.tartaricacid.touhoulittlemaid.network.MaidGuiHandler;
+import com.github.tartaricacid.touhoulittlemaid.network.serverpack.GetServerPackMessage;
+import com.github.tartaricacid.touhoulittlemaid.network.serverpack.SendClientPackMessage;
+import com.github.tartaricacid.touhoulittlemaid.network.serverpack.ServerPackManager;
+import com.github.tartaricacid.touhoulittlemaid.network.serverpack.SyncClientPackMessage;
 import com.github.tartaricacid.touhoulittlemaid.network.simpleimpl.*;
 import com.github.tartaricacid.touhoulittlemaid.network.simpleimpl.effect.ClientEffectHandler;
 import com.github.tartaricacid.touhoulittlemaid.network.simpleimpl.effect.EffectReply;
 import com.github.tartaricacid.touhoulittlemaid.network.simpleimpl.effect.EffectRequest;
 import com.github.tartaricacid.touhoulittlemaid.network.simpleimpl.effect.ServerEffectHandler;
 import com.github.tartaricacid.touhoulittlemaid.util.ParseI18n;
+import com.github.tartaricacid.touhoulittlemaid.world.DungeonLootTable;
 import com.google.common.collect.Maps;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -44,6 +52,7 @@ import net.minecraft.init.Items;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.text.translation.I18n;
 import net.minecraft.world.biome.Biome;
+import net.minecraft.world.storage.loot.LootTableList;
 import net.minecraftforge.common.BiomeDictionary;
 import net.minecraftforge.common.config.Config;
 import net.minecraftforge.common.config.ConfigManager;
@@ -61,13 +70,14 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static com.github.tartaricacid.touhoulittlemaid.config.GeneralConfig.MOB_CONFIG;
-import static com.github.tartaricacid.touhoulittlemaid.util.DrawCalculation.readDrawCsvFile;
+import static com.github.tartaricacid.touhoulittlemaid.draw.DrawManger.readDrawCsvFile;
 
 public class CommonProxy {
     public static final Gson GSON = new GsonBuilder().registerTypeAdapter(ResourceLocation.class, new ResourceLocation.Serializer()).create();
-    public static final ScriptEngine NASHORN = new ScriptEngineManager().getEngineByName("nashorn");
     /**
      * 服务端用模型列表，
      * 这个只会在服务器启动时候读取默认原版的列表，
@@ -76,11 +86,24 @@ public class CommonProxy {
      * 只有 ResourceLocation 类和基本数据类型，不会导致服务端崩溃
      */
     public static final Map<String, String> VANILLA_ID_NAME_MAP = Maps.newHashMap();
+    private static final Pattern PATTERN = Pattern.compile("^\\d\\.\\d\\.\\d_(\\d+)$");
+    public static final ScriptEngine NASHORN = getScriptEngine();
     public static AltarRecipesManager ALTAR_RECIPES_MANAGER;
     public static SimpleNetworkWrapper INSTANCE = null;
 
     public static boolean isNpcModLoad() {
         return Loader.isModLoaded("customnpcs");
+    }
+
+    private static ScriptEngine getScriptEngine() {
+        Matcher matcher = PATTERN.matcher(System.getProperty("java.version"));
+        if (matcher.find()) {
+            int version = Integer.parseInt(matcher.group(1));
+            if (version < 60) {
+                return new ScriptEngineManager().getEngineByName("nashorn");
+            }
+        }
+        return new ScriptEngineManager(null).getEngineByName("nashorn");
     }
 
     public void preInit(FMLPreInitializationEvent event) {
@@ -109,6 +132,8 @@ public class CommonProxy {
         if (Loader.isModLoaded("patchouli")) {
             MultiblockRegistry.init();
         }
+        LootTableList.register(DungeonLootTable.getPowerPointLoot());
+        LootTableList.register(DungeonLootTable.getSmartSlabLoot());
     }
 
     public void postInit(FMLPostInitializationEvent event) {
@@ -144,6 +169,7 @@ public class CommonProxy {
 
         // 注册 FarmHandler 和 FeedHandler
         LittleMaidAPI.registerFarmHandler(new VanillaNormalFarmHandler());
+        VanillaNormalFarmHandler.readInnerCropFile();
         LittleMaidAPI.registerFarmHandler(new VanillaSugarCaneFarmHandler());
         LittleMaidAPI.registerFarmHandler(new VanillaMelonHandler());
         LittleMaidAPI.registerFarmHandler(new VanillaCocoaHandler());
@@ -165,6 +191,7 @@ public class CommonProxy {
             AltarZen.DELAYED_ACTIONS.forEach(CraftTweakerAPI::apply);
             AltarZen.DELAYED_ACTIONS.clear();
         }
+        ServerPackManager.initCrc32Info();
     }
 
     public void loadComplete(FMLLoadCompleteEvent event) {
@@ -175,6 +202,7 @@ public class CommonProxy {
         event.registerServerCommand(new MainCommand());
         event.registerServerCommand(new ReloadSpellCardCommand());
         event.registerServerCommand(new ReloadDrawCommand());
+        event.registerServerCommand(new ReloadServerPackCommand());
     }
 
     /**
@@ -215,6 +243,7 @@ public class CommonProxy {
         EntityRegistry.registerModEntity(new ResourceLocation(TouhouLittleMaid.MOD_ID, "entity.item.portable_audio"), EntityPortableAudio.class, "touhou_little_maid.portable_audio", 13, TouhouLittleMaid.INSTANCE, 80, 10, true);
         EntityRegistry.registerModEntity(new ResourceLocation(TouhouLittleMaid.MOD_ID, "entity.item.extinguishing_agent"), EntityExtinguishingAgent.class, "touhou_little_maid.extinguishing_agent", 14, TouhouLittleMaid.INSTANCE, 80, 10, true);
         EntityRegistry.registerModEntity(new ResourceLocation(TouhouLittleMaid.MOD_ID, "entity.item.throw_power_point"), EntityThrowPowerPoint.class, "touhou_little_maid.throw_power_point", 15, TouhouLittleMaid.INSTANCE, 80, 10, true);
+        EntityRegistry.registerModEntity(new ResourceLocation(TouhouLittleMaid.MOD_ID, "entity.item.maid_joy"), EntityMaidJoy.class, "touhou_little_maid.maid_joy", 16, TouhouLittleMaid.INSTANCE, 80, 10, false);
     }
 
     private void registerEntitySpawns() {
@@ -252,6 +281,12 @@ public class CommonProxy {
         INSTANCE.registerMessage(SetScarecrowDataMessage.Handler.class, SetScarecrowDataMessage.class, 23, Side.SERVER);
         INSTANCE.registerMessage(PortableAudioMessageToServer.Handler.class, PortableAudioMessageToServer.class, 24, Side.SERVER);
         INSTANCE.registerMessage(PortableAudioMessageToClient.Handler.class, PortableAudioMessageToClient.class, 25, Side.CLIENT);
+        INSTANCE.registerMessage(UpdateMaidSleepYawMessage.Handler.class, UpdateMaidSleepYawMessage.class, 26, Side.CLIENT);
+        INSTANCE.registerMessage(SyncClientPackMessage.Handler.class, SyncClientPackMessage.class, 27, Side.CLIENT);
+        INSTANCE.registerMessage(GetServerPackMessage.Handler.class, GetServerPackMessage.class, 28, Side.SERVER);
+        INSTANCE.registerMessage(SendClientPackMessage.Handler.class, SendClientPackMessage.class, 29, Side.CLIENT);
+        INSTANCE.registerMessage(SendToClientDrawMessage.Handler.class, SendToClientDrawMessage.class, 30, Side.CLIENT);
+        INSTANCE.registerMessage(SendToServerDrawMessage.Handler.class, SendToServerDrawMessage.class, 31, Side.SERVER);
     }
 
     /**

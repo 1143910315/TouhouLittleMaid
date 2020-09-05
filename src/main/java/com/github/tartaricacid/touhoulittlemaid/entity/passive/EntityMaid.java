@@ -5,27 +5,38 @@ import com.github.tartaricacid.touhoulittlemaid.api.*;
 import com.github.tartaricacid.touhoulittlemaid.api.event.InteractMaidEvent;
 import com.github.tartaricacid.touhoulittlemaid.api.util.BaubleItemHandler;
 import com.github.tartaricacid.touhoulittlemaid.block.BlockGarageKit;
+import com.github.tartaricacid.touhoulittlemaid.block.BlockMaidBed;
 import com.github.tartaricacid.touhoulittlemaid.capability.MaidNumHandler;
 import com.github.tartaricacid.touhoulittlemaid.capability.MaidNumSerializer;
 import com.github.tartaricacid.touhoulittlemaid.client.model.EntityModelJson;
+import com.github.tartaricacid.touhoulittlemaid.client.renderer.entity.EntityMaidLookIdle;
 import com.github.tartaricacid.touhoulittlemaid.client.resources.CustomResourcesLoader;
 import com.github.tartaricacid.touhoulittlemaid.config.GeneralConfig;
 import com.github.tartaricacid.touhoulittlemaid.entity.ai.*;
 import com.github.tartaricacid.touhoulittlemaid.entity.item.AbstractEntityFromItem;
+import com.github.tartaricacid.touhoulittlemaid.entity.item.EntityMaidJoy;
 import com.github.tartaricacid.touhoulittlemaid.entity.item.EntityMarisaBroom;
 import com.github.tartaricacid.touhoulittlemaid.entity.item.EntityPowerPoint;
 import com.github.tartaricacid.touhoulittlemaid.entity.monster.EntityFairy;
 import com.github.tartaricacid.touhoulittlemaid.entity.monster.EntityRinnosuke;
+import com.github.tartaricacid.touhoulittlemaid.entity.passive.favorability.EventType;
+import com.github.tartaricacid.touhoulittlemaid.entity.passive.favorability.FavorabilityEvent;
+import com.github.tartaricacid.touhoulittlemaid.entity.passive.favorability.JoyType;
+import com.github.tartaricacid.touhoulittlemaid.entity.passive.favorability.Level;
+import com.github.tartaricacid.touhoulittlemaid.init.MaidBlocks;
 import com.github.tartaricacid.touhoulittlemaid.init.MaidSoundEvent;
 import com.github.tartaricacid.touhoulittlemaid.internal.task.TaskIdle;
 import com.github.tartaricacid.touhoulittlemaid.inventory.MaidHandsItemHandler;
 import com.github.tartaricacid.touhoulittlemaid.inventory.MaidInventoryItemHandler;
 import com.github.tartaricacid.touhoulittlemaid.item.ItemKappaCompass;
 import com.github.tartaricacid.touhoulittlemaid.network.MaidGuiHandler;
+import com.github.tartaricacid.touhoulittlemaid.network.simpleimpl.UpdateMaidSleepYawMessage;
 import com.github.tartaricacid.touhoulittlemaid.proxy.CommonProxy;
 import com.github.tartaricacid.touhoulittlemaid.util.ItemDropUtil;
 import com.github.tartaricacid.touhoulittlemaid.util.ParseI18n;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import net.minecraft.block.BlockHorizontal;
 import net.minecraft.block.state.IBlockState;
 import net.minecraft.enchantment.EnchantmentHelper;
 import net.minecraft.entity.*;
@@ -44,6 +55,7 @@ import net.minecraft.entity.projectile.EntityArrow;
 import net.minecraft.init.Blocks;
 import net.minecraft.init.Enchantments;
 import net.minecraft.init.Items;
+import net.minecraft.inventory.EntityEquipmentSlot;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemArmor;
 import net.minecraft.item.ItemStack;
@@ -74,6 +86,7 @@ import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.util.Constants;
 import net.minecraftforge.event.ForgeEventFactory;
 import net.minecraftforge.fml.common.Loader;
+import net.minecraftforge.fml.common.network.NetworkRegistry;
 import net.minecraftforge.fml.relauncher.ReflectionHelper;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
@@ -88,6 +101,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 public class EntityMaid extends AbstractEntityMaid {
     private static final DataParameter<Boolean> BEGGING = EntityDataManager.createKey(EntityMaid.class, DataSerializers.BOOLEAN);
@@ -100,6 +114,7 @@ public class EntityMaid extends AbstractEntityMaid {
     private static final DataParameter<Boolean> STRUCK_BY_LIGHTNING = EntityDataManager.createKey(EntityMaid.class, DataSerializers.BOOLEAN);
     private static final DataParameter<String> SASIMONO_CRC32 = EntityDataManager.createKey(EntityMaid.class, DataSerializers.STRING);
     private static final DataParameter<Boolean> SHOW_SASIMONO = EntityDataManager.createKey(EntityMaid.class, DataSerializers.BOOLEAN);
+    private static final DataParameter<Integer> FAVORABILITY = EntityDataManager.createKey(EntityMaid.class, DataSerializers.VARINT);
     /**
      * 无敌状态不会主动同步至客户端
      */
@@ -109,6 +124,10 @@ public class EntityMaid extends AbstractEntityMaid {
      * 要在客户端显示女仆当前所处的模式，所以需要同步客户端
      */
     private static final DataParameter<Integer> COMPASS_MODE = EntityDataManager.createKey(EntityMaid.class, DataSerializers.VARINT);
+    /**
+     * 女仆是否处于睡觉状态
+     */
+    private static final DataParameter<Boolean> SLEEP = EntityDataManager.createKey(EntityMaid.class, DataSerializers.BOOLEAN);
     /**
      * 模式所应用的 AI 的优先级
      */
@@ -173,23 +192,25 @@ public class EntityMaid extends AbstractEntityMaid {
     private boolean canRiding = true;
     private BlockPos leashedPosition = BlockPos.ORIGIN;
     private float maximumLeashedDistance = INFINITY_LEASHED_DISTANCE;
+    private Map<String, Integer> joyTickData = Maps.newHashMap();
 
     public EntityMaid(World worldIn) {
         super(worldIn);
         setSize(0.6f, 1.5f);
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     protected void initEntityAI() {
         this.tasks.addTask(1, new EntityAISwimming(this));
+        this.tasks.addTask(2, new EntityMaidFindBed(this, 0.8f));
         this.tasks.addTask(3, new EntityMaidPanic(this, 1.0f));
-        this.tasks.addTask(3, new EntityMaidAvoidEntity(this, EntityRinnosuke.class, 3.0f, 0.8d, 0.9d));
-        this.tasks.addTask(3, new EntityMaidAvoidEntity(this, EntityFairy.class, 3.0f, 0.8d, 0.9d));
-        this.tasks.addTask(3, new EntityMaidAvoidEntity(this, EntityCreeper.class, 6.0F, 0.8d, 0.9d));
+        this.tasks.addTask(3, new EntityMaidAvoidEntity<>(this, EntityRinnosuke.class, 3.0f, 0.8d, 0.9d));
+        this.tasks.addTask(3, new EntityMaidAvoidEntity<>(this, EntityFairy.class, 3.0f, 0.8d, 0.9d));
+        this.tasks.addTask(3, new EntityMaidAvoidEntity<>(this, EntityCreeper.class, 6.0F, 0.8d, 0.9d));
         this.tasks.addTask(3, new EntityMaidCompassSetting(this, 0.6f));
         this.tasks.addTask(4, new EntityMaidBeg(this, 8.0f));
         this.tasks.addTask(4, new EntityMaidOpenDoor(this, true));
+        this.tasks.addTask(4, new EntityMaidFindJoyBlock(this, 0.8f));
 
         this.tasks.addTask(5, new EntityMaidStorage(this, 0.8f));
         this.tasks.addTask(6, new EntityMaidPickup(this, 0.8f));
@@ -200,12 +221,12 @@ public class EntityMaid extends AbstractEntityMaid {
         this.tasks.addTask(9, new EntityMaidWatchClosest(this, EntityWolf.class, 4.0F, 0.1f));
         this.tasks.addTask(9, new EntityMaidWatchClosest(this, EntityOcelot.class, 4.0F, 0.1f));
         this.tasks.addTask(9, new EntityMaidWatchClosest(this, EntityParrot.class, 4.0F, 0.1f));
-        this.tasks.addTask(10, new EntityAILookIdle(this));
+        this.tasks.addTask(10, new EntityMaidLookIdle(this));
         this.tasks.addTask(11, new EntityMaidWanderAvoidWater(this, 0.5f));
 
         this.targetTasks.addTask(1, new EntityAIHurtByTarget(this, true));
-        this.targetTasks.addTask(2, new EntityAINearestAttackableTarget(this, EntityMob.class, true));
-        this.targetTasks.addTask(2, new EntityAINearestAttackableTarget(this, EntitySlime.class, true));
+        this.targetTasks.addTask(2, new EntityAINearestAttackableTarget<>(this, EntityMob.class, true));
+        this.targetTasks.addTask(2, new EntityAINearestAttackableTarget<>(this, EntitySlime.class, true));
         this.targetTasks.addTask(3, new EntityAIOwnerHurtByTarget(this));
         this.targetTasks.addTask(4, new EntityAIOwnerHurtTarget(this));
     }
@@ -226,6 +247,8 @@ public class EntityMaid extends AbstractEntityMaid {
         this.dataManager.register(INVULNERABLE, false);
         this.dataManager.register(BACKPACK_LEVEL, EnumBackPackLevel.EMPTY.getLevel());
         this.dataManager.register(COMPASS_MODE, ItemKappaCompass.Mode.NONE.ordinal());
+        this.dataManager.register(SLEEP, false);
+        this.dataManager.register(FAVORABILITY, 0);
     }
 
     @Override
@@ -258,7 +281,55 @@ public class EntityMaid extends AbstractEntityMaid {
         applyEntityRiding();
         applyNavigatorAndMoveHelper();
         // 计数器 tick
-        cooldownTracker.tick();
+        // cooldownTracker.tick();
+        // 睡觉计算
+        if (this.isSleep()) {
+            onMaidSleep();
+        }
+        // 娱乐计算
+        if (!world.isRemote) {
+            JoyType.updateJoyTick(this, joyTickData);
+        }
+        // 夜间、雷暴天工作
+        if (ticksExisted % 1000 == 0 && !world.isRemote) {
+            if (!world.isDaytime() || world.isThundering()) {
+                if (!this.getTask().getUid().equals(TaskIdle.UID)) {
+                    MinecraftForge.EVENT_BUS.post(new FavorabilityEvent(EventType.WORK_NIGHT_OR_THUNDERSTORM, this));
+                }
+            }
+        }
+    }
+
+    private void onMaidSleep() {
+        // 必须在服务端检测
+        if (!world.isRemote) {
+            IBlockState state = world.getBlockState(this.getPosition().down());
+            if (state.getBlock() == MaidBlocks.MAID_BED && state.getValue(BlockMaidBed.PART) == BlockMaidBed.EnumPartType.FOOT) {
+                if (world.isDaytime() && !world.isThundering()) {
+                    this.setSleep(false);
+                    this.setSilent(false);
+                    this.setHealth(getMaxHealth());
+                    MinecraftForge.EVENT_BUS.post(new FavorabilityEvent(EventType.WAKE_UP_NATURALLY, this));
+                } else {
+                    if (!this.isSilent()) {
+                        this.setSilent(true);
+                    }
+                    if (ticksExisted % 2 == 0) {
+                        setPositionAndRotation(Math.floor(this.posX) + 0.5, this.posY, Math.floor(this.posZ) + 0.5,
+                                state.getValue(BlockHorizontal.FACING).getHorizontalAngle(), 0);
+                    }
+                    if (ticksExisted % 60 == 0) {
+                        CommonProxy.INSTANCE.sendToAllAround(new UpdateMaidSleepYawMessage(getEntityId(),
+                                        state.getValue(BlockHorizontal.FACING).getHorizontalAngle()),
+                                new NetworkRegistry.TargetPoint(dimension, posX, posY, posZ, 128));
+                    }
+                }
+            } else {
+                this.setSleep(false);
+                this.setSilent(false);
+                MinecraftForge.EVENT_BUS.post(new FavorabilityEvent(EventType.WAKE_UP_NOISE, this));
+            }
+        }
     }
 
     private void spawnPortalParticle() {
@@ -281,7 +352,8 @@ public class EntityMaid extends AbstractEntityMaid {
      */
     private void randomRestoreHealth() {
         if (this.getHealth() < this.getMaxHealth() && rand.nextFloat() < 0.0025) {
-            this.heal(1);
+            Level level = Level.getLevelByCount(getFavorability());
+            this.heal(level.getHealthyValue() / 20);
             this.spawnRestoreHealthParticle(rand.nextInt(3) + 7);
         }
     }
@@ -352,7 +424,7 @@ public class EntityMaid extends AbstractEntityMaid {
                 boolean maidNotRiddenAndRiding = !this.isBeingRidden() && !this.isRiding();
                 boolean passengerNotRiddenAndRiding = !entity.isBeingRidden() && !entity.isRiding();
                 // 女仆处于待命或设置了不骑乘状态
-                boolean stateIsForbid = this.isSitting() || !this.isCanRiding();
+                boolean stateIsForbid = this.isSitting() || this.isSleep() || !this.isCanRiding();
                 // 服务端，而且尝试坐上去的实体是 IEntityRidingMaid
                 if (!world.isRemote && !stateIsForbid && maidNotRiddenAndRiding && passengerNotRiddenAndRiding &&
                         entity instanceof IEntityRidingMaid && ((IEntityRidingMaid) entity).canRiding(this)) {
@@ -559,15 +631,21 @@ public class EntityMaid extends AbstractEntityMaid {
     @Override
     public boolean attackEntityFrom(@Nonnull DamageSource source, float amount) {
         // 拥有旗指物时，玩家对自己女仆的伤害数值为 1/5，最大为 2
-        if (source.getTrueSource() instanceof EntityPlayer && this.isOwner((EntityPlayer) source.getTrueSource()) && this.hasSasimono()) {
-            amount = MathHelper.clamp(amount / 5, 0, 2);
+        if (source.getTrueSource() instanceof EntityPlayer && this.isOwner((EntityPlayer) source.getTrueSource())) {
+            if (this.hasSasimono()) {
+                amount = MathHelper.clamp(amount / 5, 0, 2);
+            } else {
+                MinecraftForge.EVENT_BUS.post(new FavorabilityEvent(EventType.HURT_BY_PLAYER, this));
+            }
+        } else {
+            MinecraftForge.EVENT_BUS.post(new FavorabilityEvent(EventType.HURT, this));
         }
         return super.attackEntityFrom(source, amount);
     }
 
     @Override
     public boolean canAttackClass(Class<? extends EntityLivingBase> cls) {
-        return cls != AbstractEntityFromItem.class && cls != EntityArmorStand.class && super.canAttackClass(cls);
+        return !AbstractEntityFromItem.class.isAssignableFrom(cls) && cls != EntityArmorStand.class && super.canAttackClass(cls);
     }
 
     @Override
@@ -652,7 +730,7 @@ public class EntityMaid extends AbstractEntityMaid {
         super.onStruckByLightning(lightningBolt);
         if (!isStruckByLightning()) {
             double beforeMaxHealth = this.getEntityAttribute(SharedMonsterAttributes.MAX_HEALTH).getBaseValue();
-            this.getEntityAttribute(SharedMonsterAttributes.MAX_HEALTH).setBaseValue(beforeMaxHealth * 2);
+            this.getEntityAttribute(SharedMonsterAttributes.MAX_HEALTH).setBaseValue(beforeMaxHealth + 20);
             setStruckByLightning(true);
         }
     }
@@ -735,7 +813,7 @@ public class EntityMaid extends AbstractEntityMaid {
      */
     private boolean openMaidGui(EntityPlayer player) {
         // 否则打开 GUI
-        if (!world.isRemote) {
+        if (!world.isRemote && !this.isSleep()) {
             player.openGui(TouhouLittleMaid.INSTANCE, MaidGuiHandler.MAIN_GUI.MAIN.getId(), world, this.getEntityId(), LittleMaidAPI.getTasks().indexOf(task), 0);
         }
         return true;
@@ -770,6 +848,9 @@ public class EntityMaid extends AbstractEntityMaid {
         if (baubleInv.fireEvent((b, s) -> b.onDropsPre(this, s))) {
             return;
         }
+
+        // 好感度
+        MinecraftForge.EVENT_BUS.post(new FavorabilityEvent(EventType.DEATH, this));
 
         // 将女仆身上的物品进行掉落
         if (!world.isRemote) {
@@ -960,6 +1041,15 @@ public class EntityMaid extends AbstractEntityMaid {
         if (compound.hasKey(NBT.CAN_RIDING.getName())) {
             canRiding = compound.getBoolean(NBT.CAN_RIDING.getName());
         }
+        if (compound.hasKey(NBT.SLEEP.getName())) {
+            setSleep(compound.getBoolean(NBT.SLEEP.getName()));
+        }
+        if (compound.hasKey(NBT.FAVORABILITY.getName())) {
+            setFavorability(compound.getInteger(NBT.FAVORABILITY.getName()));
+        }
+        if (compound.hasKey(NBT.JOY_TICK_DATA.getName())) {
+            joyTickData = JoyType.compoundToJoyTickData(compound.getCompoundTag(NBT.JOY_TICK_DATA.getName()));
+        }
     }
 
     @Override
@@ -994,6 +1084,9 @@ public class EntityMaid extends AbstractEntityMaid {
         compound.setBoolean(NBT.CAN_HOLD_VEHICLE.getName(), canHoldVehicle);
         compound.setBoolean(NBT.CAN_RIDING_BROOM.getName(), canRidingBroom);
         compound.setBoolean(NBT.CAN_RIDING.getName(), canRiding);
+        compound.setBoolean(NBT.SLEEP.getName(), isSleep());
+        compound.setInteger(NBT.FAVORABILITY.getName(), getFavorability());
+        compound.setTag(NBT.JOY_TICK_DATA.getName(), JoyType.joyTickDataToCompound(joyTickData));
     }
 
     @Override
@@ -1410,11 +1503,11 @@ public class EntityMaid extends AbstractEntityMaid {
     }
 
     public boolean isStruckByLightning() {
-        return this.getDataManager().get(STRUCK_BY_LIGHTNING);
+        return this.dataManager.get(STRUCK_BY_LIGHTNING);
     }
 
     public void setStruckByLightning(boolean isStruck) {
-        this.getDataManager().set(STRUCK_BY_LIGHTNING, isStruck);
+        this.dataManager.set(STRUCK_BY_LIGHTNING, isStruck);
     }
 
     public Long getSasimonoCRC32() {
@@ -1438,9 +1531,21 @@ public class EntityMaid extends AbstractEntityMaid {
         this.dataManager.set(SHOW_SASIMONO, isShow);
     }
 
-    public void setBackpackLevel(EnumBackPackLevel level) {
-        this.dataManager.set(BACKPACK_LEVEL,
-                MathHelper.clamp(level.getLevel(), EnumBackPackLevel.EMPTY.getLevel(), EnumBackPackLevel.BIG.getLevel()));
+    @Override
+    public boolean isSleep() {
+        return this.dataManager.get(SLEEP);
+    }
+
+    public void setSleep(boolean isSleep) {
+        this.dataManager.set(SLEEP, isSleep);
+    }
+
+    public int getFavorability() {
+        return this.dataManager.get(FAVORABILITY);
+    }
+
+    public void setFavorability(int point) {
+        this.dataManager.set(FAVORABILITY, point);
     }
 
     public EnumBackPackLevel getBackLevel() {
@@ -1563,7 +1668,7 @@ public class EntityMaid extends AbstractEntityMaid {
 
     @Override
     public boolean isCanHoldTrolley() {
-        return canHoldTrolley;
+        return canHoldTrolley && !isSleep();
     }
 
     public void setCanHoldTrolley(boolean canHoldTrolley) {
@@ -1572,7 +1677,7 @@ public class EntityMaid extends AbstractEntityMaid {
 
     @Override
     public boolean isCanHoldVehicle() {
-        return canHoldVehicle;
+        return canHoldVehicle && !isSleep();
     }
 
     public void setCanHoldVehicle(boolean canHoldVehicle) {
@@ -1581,7 +1686,7 @@ public class EntityMaid extends AbstractEntityMaid {
 
     @Override
     public boolean isCanRidingBroom() {
-        return canRidingBroom;
+        return canRidingBroom && !isSleep();
     }
 
     public void setCanRidingBroom(boolean canRidingBroom) {
@@ -1589,11 +1694,60 @@ public class EntityMaid extends AbstractEntityMaid {
     }
 
     public boolean isCanRiding() {
-        return canRiding;
+        return canRiding && !isSleep();
     }
 
     public void setCanRiding(boolean canRiding) {
         this.canRiding = canRiding;
+    }
+
+    public Map<String, Integer> getJoyTickData() {
+        return joyTickData;
+    }
+
+    public boolean hasHelmet() {
+        return !getItemStackFromSlot(EntityEquipmentSlot.HEAD).isEmpty();
+    }
+
+    public boolean hasChestPlate() {
+        return !getItemStackFromSlot(EntityEquipmentSlot.CHEST).isEmpty();
+    }
+
+    public boolean hasLeggings() {
+        return !getItemStackFromSlot(EntityEquipmentSlot.LEGS).isEmpty();
+    }
+
+    public boolean hasBoots() {
+        return !getItemStackFromSlot(EntityEquipmentSlot.FEET).isEmpty();
+    }
+
+    public String getAtBiomeTemp() {
+        return world.getBiome(getPosition()).getTempCategory().name();
+    }
+
+    public double getArmorValue() {
+        return getEntityAttribute(SharedMonsterAttributes.ARMOR).getAttributeValue();
+    }
+
+    public boolean onHurt() {
+        return hurtTime > 0;
+    }
+
+    public boolean hasBackpack() {
+        return getBackLevel() != EntityMaid.EnumBackPackLevel.EMPTY;
+    }
+
+    public int getBackpackLevel() {
+        return getBackLevel().getLevel();
+    }
+
+    public void setBackpackLevel(EnumBackPackLevel level) {
+        this.dataManager.set(BACKPACK_LEVEL,
+                MathHelper.clamp(level.getLevel(), EnumBackPackLevel.EMPTY.getLevel(), EnumBackPackLevel.BIG.getLevel()));
+    }
+
+    public boolean isSitInJoyBlock() {
+        return getRidingEntity() instanceof EntityMaidJoy;
     }
 
     @Nonnull
@@ -1653,7 +1807,13 @@ public class EntityMaid extends AbstractEntityMaid {
         // 能够使用扫帚
         CAN_RIDING_BROOM("MaidCanRidingBroom"),
         // 能够主动坐上坐垫之类的
-        CAN_RIDING("MaidCanRidingEntity");
+        CAN_RIDING("MaidCanRidingEntity"),
+        // 女仆是否处于睡觉状态
+        SLEEP("MaidIsSleep"),
+        // 女仆好感度
+        FAVORABILITY("MaidFavorability"),
+        // 女仆娱乐设施的计数器
+        JOY_TICK_DATA("MaidJoyTickData");
 
         private String name;
 

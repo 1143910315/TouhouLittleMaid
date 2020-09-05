@@ -35,59 +35,63 @@ public class TileEntityItemStackGarageKitRenderer extends TileEntityItemStackRen
     @Override
     public void renderByItem(@Nonnull ItemStack itemStackIn) {
         if (itemStackIn.getItem() == Item.getItemFromBlock(MaidBlocks.GARAGE_KIT)) {
-            World world = Minecraft.getMinecraft().world;
-            float renderItemScale = 1.0f;
-            GlStateManager.pushMatrix();
-
-            if (Minecraft.isAmbientOcclusionEnabled()) {
-                GlStateManager.shadeModel(GL11.GL_SMOOTH);
-            } else {
-                GlStateManager.shadeModel(GL11.GL_FLAT);
-            }
-
-            String entityId = BlockGarageKit.getEntityId(itemStackIn);
-            Entity entity;
-            try {
-                entity = EntityCacheUtil.ENTITY_CACHE.get(entityId, () -> {
-                    Entity e = EntityList.createEntityByIDFromName(new ResourceLocation(entityId), world);
-                    if (e == null) {
-                        return new EntityMaid(world);
-                    } else {
-                        return e;
-                    }
-                });
-                if (entity instanceof EntityMaid) {
-                    EntityMaid maid = (EntityMaid) entity;
-                    clearMaidDataResidue(maid, true);
-                    maid.setModelId(BlockGarageKit.getModelId(itemStackIn));
-                    renderItemScale = CustomResourcesLoader.MAID_MODEL.getModelRenderItemScale(BlockGarageKit.getModelId(itemStackIn));
-                }
-                entity.readFromNBT(BlockGarageKit.getEntityData(itemStackIn));
-            } catch (ExecutionException e) {
-                return;
-            }
-
-            GlStateManager.enableColorMaterial();
-            GlStateManager.setActiveTexture(OpenGlHelper.lightmapTexUnit);
-            final boolean lightmapEnabled = GL11.glGetBoolean(GL11.GL_TEXTURE_2D);
-            GlStateManager.setActiveTexture(OpenGlHelper.defaultTexUnit);
-
-            GlStateManager.scale(renderItemScale, renderItemScale, renderItemScale);
-            Minecraft.getMinecraft().getRenderManager().setRenderShadow(false);
-            Minecraft.getMinecraft().getRenderManager().renderEntity(entity,
-                    0.875, 0.25, 0.75, 0, 0, true);
-            Minecraft.getMinecraft().getRenderManager().setRenderShadow(true);
-
-            GlStateManager.popMatrix();
-
-            GlStateManager.setActiveTexture(OpenGlHelper.lightmapTexUnit);
-            if (lightmapEnabled) {
-                GlStateManager.enableTexture2D();
-            } else {
-                GlStateManager.disableTexture2D();
-            }
-            GlStateManager.setActiveTexture(OpenGlHelper.defaultTexUnit);
-            GlStateManager.enableBlend();
+            renderEntityIcon(itemStackIn);
         }
+    }
+
+    private void renderEntityIcon(@Nonnull ItemStack itemStackIn) {
+        World world = Minecraft.getMinecraft().world;
+        float renderItemScale = 1.0f;
+        GlStateManager.pushMatrix();
+
+        if (Minecraft.isAmbientOcclusionEnabled()) {
+            GlStateManager.shadeModel(GL11.GL_SMOOTH);
+        } else {
+            GlStateManager.shadeModel(GL11.GL_FLAT);
+        }
+
+        String entityId = BlockGarageKit.getEntityId(itemStackIn);
+        Entity entity;
+        try {
+            entity = EntityCacheUtil.ENTITY_CACHE.get(entityId, () -> {
+                Entity e = EntityList.createEntityByIDFromName(new ResourceLocation(entityId), world);
+                if (e == null) {
+                    return new EntityMaid(world);
+                } else {
+                    return e;
+                }
+            });
+            if (entity instanceof EntityMaid) {
+                EntityMaid maid = (EntityMaid) entity;
+                clearMaidDataResidue(maid, true);
+                maid.setModelId(BlockGarageKit.getModelId(itemStackIn));
+                renderItemScale = CustomResourcesLoader.MAID_MODEL.getModelRenderItemScale(BlockGarageKit.getModelId(itemStackIn));
+            }
+            entity.readFromNBT(BlockGarageKit.getEntityData(itemStackIn));
+        } catch (ExecutionException e) {
+            return;
+        }
+
+        GlStateManager.enableColorMaterial();
+        GlStateManager.setActiveTexture(OpenGlHelper.lightmapTexUnit);
+        final boolean lightmapEnabled = GL11.glGetBoolean(GL11.GL_TEXTURE_2D);
+        GlStateManager.setActiveTexture(OpenGlHelper.defaultTexUnit);
+
+        GlStateManager.scale(renderItemScale, renderItemScale, renderItemScale);
+        Minecraft.getMinecraft().getRenderManager().setRenderShadow(false);
+        Minecraft.getMinecraft().getRenderManager().renderEntity(entity,
+                0.875, 0.25, 0.75, 0, 0, true);
+        Minecraft.getMinecraft().getRenderManager().setRenderShadow(true);
+
+        GlStateManager.popMatrix();
+
+        GlStateManager.setActiveTexture(OpenGlHelper.lightmapTexUnit);
+        if (lightmapEnabled) {
+            GlStateManager.enableTexture2D();
+        } else {
+            GlStateManager.disableTexture2D();
+        }
+        GlStateManager.setActiveTexture(OpenGlHelper.defaultTexUnit);
+        GlStateManager.enableBlend();
     }
 }

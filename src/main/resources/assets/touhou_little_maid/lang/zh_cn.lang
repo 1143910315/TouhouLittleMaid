@@ -58,6 +58,11 @@ item.touhou_little_maid.portable_audio.name=手提音响
 item.touhou_little_maid.chisel.name=雕刻刀
 item.touhou_little_maid.extinguisher.name=灭火器
 item.touhou_little_maid.power_point.name=P 点
+item.touhou_little_maid.maid_bed.name=女仆床
+item.touhou_little_maid.maid_joy.reading.name=书桌
+item.touhou_little_maid.maid_joy.piano.name=电子琴
+item.touhou_little_maid.maid_joy.live.name=直播站
+item.touhou_little_maid.smart_slab.name=魂符
 
 # Block
 tile.touhou_little_maid.garage_kit.name=手办
@@ -74,11 +79,14 @@ commands.touhou_little_maid.main.power.info=当前 Power 数：%.2f
 commands.touhou_little_maid.main.maid_num.info=当前女仆数：%d
 commands.touhou_little_maid.spell_card.usage=§c用法：/spell_card <reload>
 commands.touhou_little_maid.spell_card.reload=已经重载所有的符卡
-commands.touhou_little_maid.draw_coupon.usage=§c用法：/draw_coupon <reload>
+commands.touhou_little_maid.draw_coupon.usage=§c用法：/draw_coupon <reload|gui>
 commands.touhou_little_maid.draw_coupon.reload=已经重载所有的抽卡数据
+commands.touhou_little_maid.draw_coupon.config_not_enable=你需要启用“禁止修改女仆模型选项（§cMaidCannotChangeModel§r）”才可以使用抽卡功能。
 commands.touhou_little_maid.maid_res.usage=§c用法：/maid_res <reload>
 commands.touhou_little_maid.maid_res.warning=§c提醒：这条命令可能无法重载某些资源
 commands.touhou_little_maid.maid_res.time=重载耗时：%.3f ms
+commands.touhou_little_maid.tlm_server_pack.usage=§c用法：/tlm_server_pack <reload>
+commands.touhou_little_maid.tlm_server_pack.reload=服务端模型包已经重载，重新进服来更新客户端模型包
 
 # Tooltips
 tooltips.touhou_little_maid.hakurei_gohei.desc=模式：%d
@@ -120,6 +128,9 @@ tooltips.touhou_little_maid.bauble.usage=需要放置在女仆的饰品栏中
 tooltips.touhou_little_maid.scarecrow.name=玩家名称：%s
 tooltips.touhou_little_maid.scarecrow.text=文本：%s
 tooltips.touhou_little_maid.scarecrow.special=[特殊模型]
+tooltips.touhou_little_maid.smart_slab.desc=可重复使用的工具，右击释放/捕捉女仆
+tooltips.touhou_little_maid.smart_slab.maid_name=女仆名称：%s
+tooltips.touhou_little_maid.smart_slab.maid_name.unknow=未知
 
 # Message
 message.touhou_little_maid.kappa_compass.usage.result.success=坐标写入成功！
@@ -160,6 +171,8 @@ message.touhou_little_maid.maid.death_pos=女仆死亡坐标：
 message.touhou_little_maid.maid.journeymap.name=旅行地图：
 message.touhou_little_maid.maid.journeymap.hover_message.click=点击创建坐标点。
 message.touhou_little_maid.maid.journeymap.hover_message.ctrl_click=Ctrl 点击在大地图中进行查看。
+message.touhou_little_maid.server.pack_sync=§a[车万女仆] §6正在同步客户端模型……
+message.touhou_little_maid.draw.pack_not_sync=§a模型包未与服务器同步，请等待同步后在使用此指令。
 
 # Compass Mode
 compass.touhou_little_maid.mode.single_point=单点模式
@@ -174,6 +187,7 @@ info.touhou_little_maid.maid.unset_pos=§6§l未设置坐标
 info.touhou_little_maid.maid.set_pos=§a§l女仆坐标：%d，%d，%d
 info.touhou_little_maid.portable_audio.playing=歌曲已经在播放了哦~
 info.touhou_little_maid.portable_audio.404=此歌曲不存在，请检查是否被下架
+info.touhou_little_maid.portable_audio.redirect_error=获取歌曲链接失败，可能是网易云屏蔽了你所使用的 IP。
 
 # Death
 death.touhou_little_maid.attack.danmaku.1=%1$s被%2$s用弹幕干掉了
@@ -191,6 +205,8 @@ config.touhou_little_maid.maid_config.maid_always_show_hat=女仆总是显示帽
 config.touhou_little_maid.maid_config.enabled_tasks=女仆启用的模式
 config.touhou_little_maid.maid_config.maid_cannot_change_model=禁止玩家改变女仆皮肤
 config.touhou_little_maid.maid_config.owner_max_maid_num=可驯服的最大女仆数
+config.touhou_little_maid.maid_config.give_init_maid=给予一个初始女仆
+config.touhou_little_maid.maid_config.spawn_slab_in_loot_chest=在战利品箱里面生成机巧板
 
 # Vanilla Config
 config.touhou_little_maid.vanilla_config=原版相关配置
@@ -218,6 +234,7 @@ config.touhou_little_maid.misc_config.chair_cannot_change_model=只有创造模�
 config.touhou_little_maid.misc_config.chair_cannot_be_destroied=只有创造模式玩家能够打掉坐垫
 config.touhou_little_maid.misc_config.danmaku_affected_by_fluid=弹幕会被流体影响么？
 config.touhou_little_maid.misc_config.give_guide_book_first=首次进入游戏给予手册？
+config.touhou_little_maid.misc_config.fast_rendering=是否开启快速渲染？
 
 # Gashapon Config
 config.touhou_little_maid.gashapon_config=扭蛋配置
@@ -233,6 +250,7 @@ config.touhou_little_maid.gashapon_config.gashapon_weights_1=N 等级扭蛋权�
 config.touhou_little_maid.music_config=音乐配置
 config.touhou_little_maid.music_config.player_name_reg=玩家名正则过滤
 config.touhou_little_maid.music_config.receive_music=是否接收音乐
+config.touhou_little_maid.music_config.music_list_count=歌单曲数（过大有可能获取失败）
 
 # Danmaku Type
 danmaku_type.touhou_little_maid.pellet=点弹
@@ -276,7 +294,7 @@ task.touhou_little_maid.extinguishing=灭火
 # GUI
 gui.touhou_little_maid.info.healthy=血量：%f/%f
 gui.touhou_little_maid.info.armor=护甲：%f/20.0
-gui.touhou_little_maid.info.attack=伤害：%f
+gui.touhou_little_maid.info.favorability=好感度：%d
 gui.touhou_little_maid.info.experience=经验：%d
 gui.touhou_little_maid.tab.main=主界面
 gui.touhou_little_maid.tab.inventory=物品栏
@@ -318,11 +336,6 @@ gui.touhou_little_maid.skin_details.show_character=显示参考角色
 gui.touhou_little_maid.skin_details.mounted_height.button.tooltips=Shift 点击能够进行十倍修改
 gui.touhou_little_maid.skin_details.set_gravity.button.false=重力
 gui.touhou_little_maid.skin_details.set_gravity.button.true=浮空
-gui.touhou_little_maid.skin_details.loaded_file=已加载动画文件：%s
-gui.touhou_little_maid.skin_details.load_animation_file=加载调试性动画文件
-gui.touhou_little_maid.skin_details.file_alteration.enable=文件监控：开
-gui.touhou_little_maid.skin_details.file_alteration.disable=文件监控：关
-gui.touhou_little_maid.skin_details.reset=重置动画
 gui.touhou_little_maid.hata_select.apply=应用材质
 gui.touhou_little_maid.hata_select.close=关闭
 gui.touhou_little_maid.hata_select.disassembly=拆卸旗指物
@@ -373,6 +386,18 @@ gui.touhou_little_maid.portable_audio.track.artists=§l歌手
 gui.touhou_little_maid.portable_audio.track.album=§l专辑
 gui.touhou_little_maid.portable_audio.track.duration=§l时长
 gui.touhou_little_maid.portable_audio.play_list.empty=模组检测到网易云歌单列表为空，原因可能如下：\n\n- 网易云音乐未在你所处地区开放使用\n- 你当前的网络环境无法连接到网易云音乐服务器\n- 网易云音乐屏蔽了你所用的 IP\n- 其他未知的网络问题\n\n当前仅支持网易云音乐，所以只有中国大陆玩家可以使用，对此深表歉意。\n不过我们后续会增加更多其他音乐网站的支持，敬请期待。\n\n请注意：这是你和网易云音乐之间的网络问题，并非模组 BUG！\n\n【按 Esc 键退出此界面】
+gui.touhou_little_maid.draw_config.save=保存
+gui.touhou_little_maid.draw_config.save_reload=保存并重载
+gui.touhou_little_maid.draw_config.done=完成！
+gui.touhou_little_maid.draw_config.edit=编辑
+gui.touhou_little_maid.draw_config.pool=奖池：%s
+gui.touhou_little_maid.draw_config.weight=权重：%d
+gui.touhou_little_maid.draw_config.how_to_edit_pool=§7奖池概率列举如下，你可通过修改服务器配置文件夹下的 §4§nTouhouLittleMaid.cfg§7 的 §4§ngashaponconfig§7 选项来修改奖池概率：\n\n§b§lN 等级权重： %d\n§a§lS 等级权重： %d\n§c§lSR 等级权重： %d\n§5§lSSR 等级权重： %d\n§6§lUR 等级权重： %d\n\n§9§n【再次点击 编辑 按钮返回】
+gui.touhou_little_maid.draw_list.index=序号
+gui.touhou_little_maid.draw_list.model_name=模型名称
+gui.touhou_little_maid.draw_list.pool=奖池
+gui.touhou_little_maid.draw_list.weight=权重
+gui.touhou_little_maid.tag.always_show=是否总是显示名称
 
 gui.touhou_little_maid.skin.text.version=版本：%s
 gui.touhou_little_maid.skin.text.date=日期：%s
@@ -701,10 +726,12 @@ subtitle.touhou_little_maid.item.portable_audio=音响：音乐
 
 # HWYLA & The One Probe
 hwyla.touhou_little_maid.entity_maid.task=当前模式：%s
+hwyla.touhou_little_maid.entity_maid.favorability=好感度：%d
 hwyla.touhou_little_maid.entity_maid.has_sasimono=拥有旗指物
 hwyla.touhou_little_maid.entity_maid.invulnerable=无敌
 hwyla.touhou_little_maid.tombstone.maid_owner=女仆主人：%s
 top.touhou_little_maid.entity_maid.task=当前模式：
+top.touhou_little_maid.entity_maid.favorability=好感度：
 top.touhou_little_maid.entity_maid.has_sasimono=拥有旗指物
 top.touhou_little_maid.entity_maid.invulnerable=无敌
 top.touhou_little_maid.tombstone.maid_owner=女仆主人：%s

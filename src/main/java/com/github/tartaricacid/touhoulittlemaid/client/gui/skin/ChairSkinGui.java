@@ -2,12 +2,13 @@ package com.github.tartaricacid.touhoulittlemaid.client.gui.skin;
 
 import com.github.tartaricacid.touhoulittlemaid.client.resources.CustomResourcesLoader;
 import com.github.tartaricacid.touhoulittlemaid.client.resources.pojo.ChairModelInfo;
+import com.github.tartaricacid.touhoulittlemaid.config.GeneralConfig;
 import com.github.tartaricacid.touhoulittlemaid.entity.item.EntityChair;
 import com.github.tartaricacid.touhoulittlemaid.network.simpleimpl.ApplyChairSkinDataMessage;
-import com.github.tartaricacid.touhoulittlemaid.proxy.ClientProxy;
 import com.github.tartaricacid.touhoulittlemaid.proxy.CommonProxy;
 import com.github.tartaricacid.touhoulittlemaid.util.EntityCacheUtil;
 import net.minecraft.client.gui.inventory.GuiInventory;
+import net.minecraft.client.renderer.GlStateManager;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityList;
 import net.minecraft.util.ResourceLocation;
@@ -22,6 +23,8 @@ import java.util.concurrent.ExecutionException;
  **/
 @SideOnly(Side.CLIENT)
 public class ChairSkinGui extends AbstractSkinGui<EntityChair, ChairModelInfo> {
+    private static final ResourceLocation ICON0 = new ResourceLocation("textures/items/spawn_egg.png");
+    private static final ResourceLocation ICON1 = new ResourceLocation("textures/items/spawn_egg_overlay.png");
     private static int PAGE_INDEX = 0;
     private static int PACK_INDEX = 0;
     private static int ROW_INDEX = 0;
@@ -38,22 +41,41 @@ public class ChairSkinGui extends AbstractSkinGui<EntityChair, ChairModelInfo> {
 
     @Override
     void drawRightEntity(int posX, int posY, ChairModelInfo modelItem) {
-        EntityChair chair;
-        try {
-            chair = (EntityChair) EntityCacheUtil.ENTITY_CACHE.get(ENTITY_ID, () -> {
-                Entity e = EntityList.createEntityByIDFromName(new ResourceLocation(ENTITY_ID), mc.world);
-                if (e == null) {
-                    return new EntityChair(mc.world);
-                } else {
-                    return e;
-                }
-            });
-        } catch (ExecutionException | ClassCastException e) {
-            e.printStackTrace();
-            return;
+        if (!GeneralConfig.MISC_CONFIG.fastRendering) {
+            EntityChair chair;
+            try {
+                chair = (EntityChair) EntityCacheUtil.ENTITY_CACHE.get(ENTITY_ID, () -> {
+                    Entity e = EntityList.createEntityByIDFromName(new ResourceLocation(ENTITY_ID), mc.world);
+                    if (e == null) {
+                        return new EntityChair(mc.world);
+                    } else {
+                        return e;
+                    }
+                });
+            } catch (ExecutionException | ClassCastException e) {
+                e.printStackTrace();
+                return;
+            }
+            chair.setModelId(modelItem.getModelId().toString());
+            GuiInventory.drawEntityOnScreen(posX, posY, (int) (12 * modelItem.getRenderItemScale()), -25, -20, chair);
+        } else {
+            float[] rgb0 = getRgbFromHash(modelItem.getName().hashCode());
+            GlStateManager.color(rgb0[0], rgb0[1], rgb0[2]);
+            mc.renderEngine.bindTexture(ICON0);
+            drawModalRectWithCustomSizedTexture(posX - 8, posY - 20, 0, 0, 16, 16, 16, 16);
+
+            float[] rgb1 = getRgbFromHash(modelItem.getModelId().hashCode());
+            GlStateManager.color(rgb1[0], rgb1[1], rgb1[2]);
+            mc.renderEngine.bindTexture(ICON1);
+            drawModalRectWithCustomSizedTexture(posX - 8, posY - 20, 0, 0, 16, 16, 16, 16);
         }
-        chair.setModelId(modelItem.getModelId().toString());
-        GuiInventory.drawEntityOnScreen(posX, posY, (int) (12 * modelItem.getRenderItemScale()), -25, -20, chair);
+    }
+
+    private float[] getRgbFromHash(int hashCode) {
+        float r = (float) (hashCode >> 16 & 255) / 255.0F;
+        float g = (float) (hashCode >> 8 & 255) / 255.0F;
+        float b = (float) (hashCode & 255) / 255.0F;
+        return new float[]{r, g, b};
     }
 
     @Override

@@ -58,6 +58,11 @@ item.touhou_little_maid.portable_audio.name=Portable Audio
 item.touhou_little_maid.chisel.name=Chisel
 item.touhou_little_maid.extinguisher.name=Extinguisher
 item.touhou_little_maid.power_point.name=Power Point
+item.touhou_little_maid.maid_bed.name=Maid Bed
+item.touhou_little_maid.maid_joy.reading.name=Book Desk
+item.touhou_little_maid.maid_joy.piano.name=Electronic Piano
+item.touhou_little_maid.maid_joy.live.name=Live Station
+item.touhou_little_maid.smart_slab.name=Soul Spell
 
 # Block
 tile.touhou_little_maid.garage_kit.name=Garage Kit
@@ -74,11 +79,14 @@ commands.touhou_little_maid.main.power.info=Current Power: %.2f
 commands.touhou_little_maid.main.maid_num.info=Current Maid Num: %d
 commands.touhou_little_maid.spell_card.usage=§cUsage: /spell_card <reload>
 commands.touhou_little_maid.spell_card.reload=Has reloaded all custom spell card
-commands.touhou_little_maid.draw_coupon.usage=§cUsage: /draw_coupon <reload>
+commands.touhou_little_maid.draw_coupon.usage=§cUsage: /draw_coupon <reload|gui>
+commands.touhou_little_maid.draw_coupon.config_not_enable=You have not enabled the §cMaid Cannot Change Model§r configuration. You must enable this option before you can use the draw function.
 commands.touhou_little_maid.draw_coupon.reload=Has reloaded all draw coupon
 commands.touhou_little_maid.maid_res.usage=§cUsage: /maid_res <reload>
 commands.touhou_little_maid.maid_res.warning=§cTips: This command may not reload some resources
 commands.touhou_little_maid.maid_res.time=Reload Time: %.3f ms
+commands.touhou_little_maid.tlm_server_pack.usage=§cUsage: /tlm_server_pack <reload>
+commands.touhou_little_maid.tlm_server_pack.reload=The server model pack has been reloaded, re-enter the server to update the client model pack
 
 # Tooltips
 tooltips.touhou_little_maid.hakurei_gohei.desc=Mode: %d
@@ -112,7 +120,7 @@ tooltips.touhou_little_maid.spell_card.author=Author: %s
 tooltips.touhou_little_maid.spell_card.version=Version: %s
 tooltips.touhou_little_maid.spell_card.cooldown=Spell Cooldown: %d ticks
 tooltips.touhou_little_maid.debug_danmaku.desc=Only For Debug
-tooltips.touhou_little_maid.substitute_jizo.desc=Right click on the maid to make it invulnerability, creative only
+tooltips.touhou_little_maid.substitute_jizo.desc=Right click on a maid to make it invulnerable, creative only
 tooltips.touhou_little_maid.maid_model_coupon.desc=Maid Model: %s
 tooltips.touhou_little_maid.gashapon_machines.desc=Draw a gashapon by right-click on gashapon coin or emerald (default).
 tooltips.touhou_little_maid.bauble.desc=§a[Maid Bauble]
@@ -120,6 +128,9 @@ tooltips.touhou_little_maid.bauble.usage=Need to be placed in the maid's bauble 
 tooltips.touhou_little_maid.scarecrow.name=Player Name: %s
 tooltips.touhou_little_maid.scarecrow.text=Text: %s
 tooltips.touhou_little_maid.scarecrow.special=[Special]
+tooltips.touhou_little_maid.smart_slab.desc=Reusable tool, right click to place or retract the maid
+tooltips.touhou_little_maid.smart_slab.maid_name=Maid Name: %s
+tooltips.touhou_little_maid.smart_slab.maid_name.unknow=Unknow
 
 # Message
 message.touhou_little_maid.kappa_compass.usage.result.success=Write point success!
@@ -160,6 +171,8 @@ message.touhou_little_maid.maid.death_pos=Maid Death Pos:
 message.touhou_little_maid.maid.journeymap.name=JourneyMap:
 message.touhou_little_maid.maid.journeymap.hover_message.click=Click to create waypoint.
 message.touhou_little_maid.maid.journeymap.hover_message.ctrl_click=Ctrl + click to view on map.
+message.touhou_little_maid.server.pack_sync=§a[Touhou Little Maid] §6Syncing client model package...
+message.touhou_little_maid.draw.pack_not_sync=§aThe model package is not synchronized with the server, please wait for synchronization before using this command.
 
 # Compass Mode
 compass.touhou_little_maid.mode.single_point=Single Point
@@ -174,6 +187,7 @@ info.touhou_little_maid.maid.unset_pos=§6§lUnset Pos
 info.touhou_little_maid.maid.set_pos=§a§lMaid Pos: %d, %d, %d
 info.touhou_little_maid.portable_audio.playing=The song is already playing ~
 info.touhou_little_maid.portable_audio.404=This song does not exist, please check whether it is removed
+info.touhou_little_maid.portable_audio.redirect_error=Failed to get the song link, it may be that NetEase Cloud blocked your ip.
 
 # Death
 death.touhou_little_maid.attack.danmaku.1=%1$s was killed by %2$s using danmaku
@@ -191,6 +205,8 @@ config.touhou_little_maid.maid_config.maid_always_show_hat=Maid Always Show Hat
 config.touhou_little_maid.maid_config.enabled_tasks=Maid Enabled Tasks
 config.touhou_little_maid.maid_config.maid_cannot_change_model=Disable Player Change Maid Skin
 config.touhou_little_maid.maid_config.owner_max_maid_num=Owner Max Maid Num
+config.touhou_little_maid.maid_config.give_init_maid=Give A Init Maid
+config.touhou_little_maid.maid_config.spawn_slab_in_loot_chest=Spawn Soul Spell In Loot Chest
 
 # Vanilla Config
 config.touhou_little_maid.vanilla_config=Vanilla Config
@@ -218,6 +234,7 @@ config.touhou_little_maid.misc_config.chair_cannot_change_model=Only creative pl
 config.touhou_little_maid.misc_config.chair_cannot_be_destroied=Only creative player can destroy chair
 config.touhou_little_maid.misc_config.danmaku_affected_by_fluid=Will the danmaku be affected by the fluid?
 config.touhou_little_maid.misc_config.give_guide_book_first=Give Guide Book?
+config.touhou_little_maid.misc_config.fast_rendering=Enable Fast Rendering?
 
 # Gashapon Config
 config.touhou_little_maid.gashapon_config=Gashapon Config
@@ -233,6 +250,7 @@ config.touhou_little_maid.gashapon_config.gashapon_weights_1=N Level Gashapon's 
 config.touhou_little_maid.music_config=Music Config
 config.touhou_little_maid.music_config.player_name_reg=Player Name Reg
 config.touhou_little_maid.music_config.receive_music=Receive Music
+config.touhou_little_maid.music_config.music_list_count=Music List Count
 
 # Danmaku Type
 danmaku_type.touhou_little_maid.pellet=Pellet
@@ -276,7 +294,7 @@ task.touhou_little_maid.extinguishing=Extinguishing
 # GUI
 gui.touhou_little_maid.info.healthy=HP: %f/%f
 gui.touhou_little_maid.info.armor=AR: %f/20.0
-gui.touhou_little_maid.info.attack=AT: %f
+gui.touhou_little_maid.info.favorability=Fav: %d
 gui.touhou_little_maid.info.experience=Exp: %d
 gui.touhou_little_maid.tab.main=Main
 gui.touhou_little_maid.tab.inventory=Inventory
@@ -318,11 +336,6 @@ gui.touhou_little_maid.skin_details.show_character=Show Ref Character
 gui.touhou_little_maid.skin_details.mounted_height.button.tooltips=Shift Click To Make Ten Times Modification
 gui.touhou_little_maid.skin_details.set_gravity.button.false=Gravity
 gui.touhou_little_maid.skin_details.set_gravity.button.true=Floating
-gui.touhou_little_maid.skin_details.loaded_file=Loaded Animation File: %s
-gui.touhou_little_maid.skin_details.load_animation_file=Load Debug Animation File
-gui.touhou_little_maid.skin_details.file_alteration.enable=File Alteration: ON
-gui.touhou_little_maid.skin_details.file_alteration.disable=File Alteration: OFF
-gui.touhou_little_maid.skin_details.reset=Reset Animation
 gui.touhou_little_maid.hata_select.apply=Apply Texture
 gui.touhou_little_maid.hata_select.close=Close
 gui.touhou_little_maid.hata_select.disassembly=Disassembly
@@ -373,6 +386,18 @@ gui.touhou_little_maid.portable_audio.track.artists=Artists
 gui.touhou_little_maid.portable_audio.track.album=Album
 gui.touhou_little_maid.portable_audio.track.duration=Time
 gui.touhou_little_maid.portable_audio.play_list.empty=The mod detects that the NetEase Cloud Music playlist is empty. The reasons may be as follows:\n\n- NetEase Cloud Music is not open for use in your region\n- Your current network environment cannot connect to NetEase Cloud Music server\n- Netease Cloud Music blocks the IP you use\n- Other unknown network issues\n\nCurrently, only NetEase Cloud Music is supported, so only players from China Mainland can use it, we apologize for this.\nHowever, we will add more support from other music websites in the future, so stay tuned.\n\nPlease note: This is a network problem between you and NetEase Cloud Music, not a mod bug!\n\n[Press Esc to exit this interface]
+gui.touhou_little_maid.draw_config.save=Save
+gui.touhou_little_maid.draw_config.save_reload=Save & Reload
+gui.touhou_little_maid.draw_config.done=Done!
+gui.touhou_little_maid.draw_config.edit=Edit
+gui.touhou_little_maid.draw_config.pool=Pool: %s
+gui.touhou_little_maid.draw_config.weight=Weight: %d
+gui.touhou_little_maid.draw_config.how_to_edit_pool=§7The probability of the pool is listed below. You can modify the probability of the pool by modifying the §4§ngashaponconfig§7 option of §4§nTouhouLittleMaid.cfg§7 under the server configuration folder:\n\n§b§lN Level Weight: %d\n§a§lS Level Weight: %d\n§c§lSR Level Weight: %d\n§5§lSSR Level Weight: %d\n§6§lUR Level Weight: %d\n\n§9§n[click the Edit button again to return]
+gui.touhou_little_maid.draw_list.index=Index
+gui.touhou_little_maid.draw_list.model_name=Model Name
+gui.touhou_little_maid.draw_list.pool=Pool
+gui.touhou_little_maid.draw_list.weight=Weight
+gui.touhou_little_maid.tag.always_show=Whether to always show the name
 
 # Skin Gui
 gui.touhou_little_maid.skin.text.version=Version: %s
@@ -703,9 +728,11 @@ subtitle.touhou_little_maid.item.portable_audio=Audio Music Sound
 # HWYLA & The One Probe
 hwyla.touhou_little_maid.entity_maid.task=Mode: %s
 hwyla.touhou_little_maid.entity_maid.has_sasimono=Has Hata Sasimono
+hwyla.touhou_little_maid.entity_maid.favorability=Favorability: %d
 hwyla.touhou_little_maid.entity_maid.invulnerable=Invulnerable
 hwyla.touhou_little_maid.tombstone.maid_owner=Maid Owner: %s
 top.touhou_little_maid.entity_maid.task=Mode:
+top.touhou_little_maid.entity_maid.favorability=Favorability:
 top.touhou_little_maid.entity_maid.has_sasimono=Has Hata Sasimono
 top.touhou_little_maid.entity_maid.invulnerable=Invulnerable
 top.touhou_little_maid.tombstone.maid_owner=Maid Owner: %s

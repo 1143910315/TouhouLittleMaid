@@ -5,12 +5,11 @@ import com.github.tartaricacid.touhoulittlemaid.client.renderer.tileentity.*;
 import com.github.tartaricacid.touhoulittlemaid.config.GeneralConfig;
 import com.github.tartaricacid.touhoulittlemaid.entity.item.EntityMaidVehicle;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
+import com.github.tartaricacid.touhoulittlemaid.entity.passive.favorability.JoyType;
 import com.github.tartaricacid.touhoulittlemaid.init.MaidBlocks;
 import com.github.tartaricacid.touhoulittlemaid.init.MaidItems;
-import com.github.tartaricacid.touhoulittlemaid.tileentity.TileEntityAltar;
-import com.github.tartaricacid.touhoulittlemaid.tileentity.TileEntityGarageKit;
-import com.github.tartaricacid.touhoulittlemaid.tileentity.TileEntityGrid;
-import com.github.tartaricacid.touhoulittlemaid.tileentity.TileEntityStatue;
+import com.github.tartaricacid.touhoulittlemaid.item.ItemMaidJoy;
+import com.github.tartaricacid.touhoulittlemaid.tileentity.*;
 import net.minecraft.client.renderer.block.model.ModelBakery;
 import net.minecraft.client.renderer.block.model.ModelResourceLocation;
 import net.minecraft.init.Items;
@@ -28,6 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import static com.github.tartaricacid.touhoulittlemaid.entity.passive.favorability.JoyType.JOYS;
 import static com.github.tartaricacid.touhoulittlemaid.util.ItemRenderRegisterUtils.*;
 
 /**
@@ -45,6 +45,7 @@ public final class MaidModel {
         ClientRegistry.bindTileEntitySpecialRenderer(TileEntityGrid.class, new TileEntityGridRenderer());
         ClientRegistry.bindTileEntitySpecialRenderer(TileEntityAltar.class, new TileEntityAltarRenderer());
         ClientRegistry.bindTileEntitySpecialRenderer(TileEntityStatue.class, new TileEntityStatueRenderer());
+        ClientRegistry.bindTileEntitySpecialRenderer(TileEntityMaidJoy.class, new TileEntityMaidJoyRenderer());
 
         // Block Item
         Item.getItemFromBlock(MaidBlocks.GARAGE_KIT).setTileEntityItemStackRenderer(TileEntityItemStackGarageKitRenderer.INSTANCE);
@@ -83,6 +84,7 @@ public final class MaidModel {
         registerRender(MaidItems.PORTABLE_AUDIO);
         registerRender(MaidItems.CHISEL);
         registerRender(MaidItems.POWER_POINT);
+        registerRender(MaidItems.MAID_BED);
 
         register2d3dRender(MaidItems.HAKUREI_GOHEI);
         register2d3dRender(MaidItems.MAID_BEACON);
@@ -164,5 +166,35 @@ public final class MaidModel {
         ModelBakery.registerItemVariants(MaidItems.MAID_VEHICLE, maidVehicle.toArray(new ModelResourceLocation[]{}));
         ModelLoader.setCustomMeshDefinition(MaidItems.MAID_VEHICLE,
                 stack -> maidVehicle.get(MathHelper.clamp(stack.getMetadata(), 0, EntityMaidVehicle.Type.values().length - 1)));
+
+        ModelResourceLocation[] maidJoy = new ModelResourceLocation[JOYS.size()];
+        for (String type : JOYS.keySet()) {
+            maidJoy[JOYS.get(type).getIndex()] = getModelRl(TouhouLittleMaid.MOD_ID, type);
+        }
+        ModelBakery.registerItemVariants(MaidItems.MAID_JOY, maidJoy);
+        ModelLoader.setCustomMeshDefinition(MaidItems.MAID_JOY, (stack -> {
+            JoyType type = JOYS.get(ItemMaidJoy.getType(stack));
+            if (type != null) {
+                return maidJoy[type.getIndex()];
+            } else {
+                return maidJoy[0];
+            }
+        }));
+
+        ModelResourceLocation smartSlabInit = getModelRl(MaidItems.SMART_SLAB, 0);
+        ModelResourceLocation smartSlabEmpty = getModelRl(MaidItems.SMART_SLAB, 1);
+        ModelResourceLocation smartSlabFull = getModelRl(MaidItems.SMART_SLAB, 2);
+        ModelBakery.registerItemVariants(MaidItems.SMART_SLAB, smartSlabInit, smartSlabEmpty, smartSlabFull);
+        ModelLoader.setCustomMeshDefinition(MaidItems.SMART_SLAB, stack -> {
+            switch (stack.getMetadata()) {
+                case 0:
+                    return smartSlabInit;
+                case 1:
+                    return smartSlabEmpty;
+                case 2:
+                default:
+                    return smartSlabFull;
+            }
+        });
     }
 }
