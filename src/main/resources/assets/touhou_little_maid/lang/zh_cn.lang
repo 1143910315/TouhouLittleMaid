@@ -70,6 +70,7 @@ tile.touhou_little_maid.grid.name=女仆交互面板
 tile.touhou_little_maid.altar.name=祭坛
 tile.touhou_little_maid.tombstone.name=墓碑
 tile.touhou_little_maid.gashapon_machines.name=扭蛋机
+tile.touhou_little_maid.territory.name=领地控制
 
 # Command
 commands.touhou_little_maid.hata.usage=§c用法：/hata <reload>

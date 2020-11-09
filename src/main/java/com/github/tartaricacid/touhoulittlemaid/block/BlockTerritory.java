@@ -10,6 +10,6 @@ public class BlockTerritory extends Block {
         setTranslationKey(TouhouLittleMaid.MOD_ID + "." + "territory");
         setHardness(1.0f);
         setRegistryName("territory");
-        setCreativeTab(MaidItems.MODEL_COUPON_TABS);
+        setCreativeTab(MaidItems.MAIN_TABS);
     }
 }
