@@ -1,0 +1,25 @@
+{
+  "textures": {
+    "down": "touhou_little_maid:block/territory_down",
+    "up": "touhou_little_maid:block/territory_up",
+    "north": "touhou_little_maid:block/territory_north",
+    "south": "touhou_little_maid:block/territory_south",
+    "west": "touhou_little_maid:block/territory_west",
+    "east": "touhou_little_maid:block/territory_east",
+    "particle": "touhou_little_maid:items/maid_beacon"
+  },
+  "elements": [
+    {
+      "from": [ 0, 0, 0 ],
+      "to": [ 16, 16, 16 ],
+      "faces": {
+        "down":  { "texture": "#down", "cullface": "down" },
+        "up":    { "texture": "#up", "cullface": "up" },
+        "north": { "texture": "#north", "cullface": "north" },
+        "south": { "texture": "#south", "cullface": "south" },
+        "west":  { "texture": "#west", "cullface": "west" },
+        "east":  { "texture": "#east", "cullface": "east" }
+      }
+    }
+  ]
+}

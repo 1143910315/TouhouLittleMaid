@@ -191,6 +191,7 @@ public final class MaidItems {
         event.getRegistry().register(new ItemBlock(MaidBlocks.GRID).setRegistryName("grid"));
         event.getRegistry().register(new ItemBlock(MaidBlocks.GARAGE_KIT).setRegistryName(MaidBlocks.GARAGE_KIT.getRegistryName()));
         event.getRegistry().register(new ItemBlock(MaidBlocks.GASHAPON_MACHINES).setRegistryName(MaidBlocks.GASHAPON_MACHINES.getRegistryName()));
+        event.getRegistry().register(new ItemBlock(MaidBlocks.TERRITORY).setRegistryName(MaidBlocks.TERRITORY.getRegistryName()));
     }
 
     private static Item getNormalBaubles(String id) {

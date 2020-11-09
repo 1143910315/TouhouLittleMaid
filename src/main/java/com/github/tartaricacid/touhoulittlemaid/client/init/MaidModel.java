@@ -55,6 +55,7 @@ public final class MaidModel {
         registerRender(MaidBlocks.GARAGE_KIT);
         registerRender(MaidBlocks.GRID);
         registerRender(MaidBlocks.GASHAPON_MACHINES);
+        registerRender(MaidBlocks.TERRITORY);
 
         // Item
         registerRender(MaidItems.ULTRAMARINE_ORB_ELIXIR);

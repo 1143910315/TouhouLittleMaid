@@ -34,6 +34,8 @@ public final class MaidBlocks {
     public static Block MAID_BED;
     @GameRegistry.ObjectHolder(TouhouLittleMaid.MOD_ID + ":maid_joy")
     public static Block MAID_JOY;
+    @GameRegistry.ObjectHolder(TouhouLittleMaid.MOD_ID + ":territory")
+    public static Block TERRITORY;
 
     @SubscribeEvent
     public static void register(RegistryEvent.Register<Block> event) {
@@ -46,6 +48,7 @@ public final class MaidBlocks {
         event.getRegistry().register(new BlockStatue());
         event.getRegistry().register(new BlockMaidBed());
         event.getRegistry().register(new BlockMaidJoy());
+        event.getRegistry().register(new BlockTerritory());
 
         GameRegistry.registerTileEntity(TileEntityGarageKit.class, new ResourceLocation(TouhouLittleMaid.MOD_ID, "garage_kit"));
         GameRegistry.registerTileEntity(TileEntityGrid.class, new ResourceLocation(TouhouLittleMaid.MOD_ID, "grid"));
