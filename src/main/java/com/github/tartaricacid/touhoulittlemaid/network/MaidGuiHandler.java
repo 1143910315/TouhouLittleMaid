@@ -9,6 +9,7 @@ import com.github.tartaricacid.touhoulittlemaid.entity.item.EntityChair;
 import com.github.tartaricacid.touhoulittlemaid.entity.item.EntityPortableAudio;
 import com.github.tartaricacid.touhoulittlemaid.entity.item.EntitySuitcase;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
+import com.github.tartaricacid.touhoulittlemaid.init.MaidItems;
 import com.github.tartaricacid.touhoulittlemaid.inventory.*;
 import com.github.tartaricacid.touhoulittlemaid.item.ItemAlbum;
 import com.github.tartaricacid.touhoulittlemaid.proxy.CommonProxy;
@@ -67,6 +68,15 @@ public class MaidGuiHandler implements IGuiHandler {
             // 服务端什么也不做
             return null;
         }
+        if (guiId == OTHER_GUI.WIRELESS_IO.getId() && player.getHeldItemMainhand().getItem() == MaidItems.WIRELESS_IO) {
+            return new WirelessIOContainer(player.inventory, player.getHeldItemMainhand());
+        }
+        if (guiId == OTHER_GUI.FURNACE_GUIDE.getId() && player.getHeldItemMainhand().getItem() == MaidItems.FURNACE_GUIDE) {
+            return new FurnaceGuideContainer(player.inventory, player.getHeldItemMainhand());
+        }
+        if (guiId == OTHER_GUI.POTION_GUIDE.getId() && player.getHeldItemMainhand().getItem() == MaidItems.POTION_GUIDE) {
+            return new PotionGuideContainer(player.inventory, player.getHeldItemMainhand());
+        }
         return null;
     }
 
@@ -109,6 +119,15 @@ public class MaidGuiHandler implements IGuiHandler {
         }
         if (CommonProxy.isNpcModLoad() && guiId == OTHER_GUI.NPC_MAID_TOOL.getId() && entity instanceof EntityCustomNpc) {
             return returnNpcClientGui(entity);
+        }
+        if (guiId == OTHER_GUI.WIRELESS_IO.getId() && player.getHeldItemMainhand().getItem() == MaidItems.WIRELESS_IO) {
+            return new WirelessIOGuiContainer(player.inventory, player.getHeldItemMainhand());
+        }
+        if (guiId == OTHER_GUI.FURNACE_GUIDE.getId() && player.getHeldItemMainhand().getItem() == MaidItems.FURNACE_GUIDE) {
+            return new FurnaceGuideGuiContainer(player.inventory, player.getHeldItemMainhand());
+        }
+        if (guiId == OTHER_GUI.POTION_GUIDE.getId() && player.getHeldItemMainhand().getItem() == MaidItems.POTION_GUIDE) {
+            return new PotionGuideGuiContainer(player.inventory, player.getHeldItemMainhand());
         }
         return null;
     }
@@ -164,7 +183,13 @@ public class MaidGuiHandler implements IGuiHandler {
         // 行李箱
         SUITCASE(9),
         // 手提音响
-        PORTABLE_AUDIO(10);
+        PORTABLE_AUDIO(10),
+        // 无线传输饰品
+        WIRELESS_IO(11),
+        // 熔炉指导
+        FURNACE_GUIDE(12),
+        // 药水指导
+        POTION_GUIDE(13);
 
         private int id;
 

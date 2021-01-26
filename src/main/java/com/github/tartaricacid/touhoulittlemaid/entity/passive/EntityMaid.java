@@ -3,6 +3,7 @@ package com.github.tartaricacid.touhoulittlemaid.entity.passive;
 import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
 import com.github.tartaricacid.touhoulittlemaid.api.*;
 import com.github.tartaricacid.touhoulittlemaid.api.event.InteractMaidEvent;
+import com.github.tartaricacid.touhoulittlemaid.api.event.MaidPlaySoundEvent;
 import com.github.tartaricacid.touhoulittlemaid.api.util.BaubleItemHandler;
 import com.github.tartaricacid.touhoulittlemaid.block.BlockGarageKit;
 import com.github.tartaricacid.touhoulittlemaid.block.BlockMaidBed;
@@ -115,6 +116,7 @@ public class EntityMaid extends AbstractEntityMaid {
     private static final DataParameter<String> SASIMONO_CRC32 = EntityDataManager.createKey(EntityMaid.class, DataSerializers.STRING);
     private static final DataParameter<Boolean> SHOW_SASIMONO = EntityDataManager.createKey(EntityMaid.class, DataSerializers.BOOLEAN);
     private static final DataParameter<Integer> FAVORABILITY = EntityDataManager.createKey(EntityMaid.class, DataSerializers.VARINT);
+    private static final DataParameter<Boolean> SHOW_HELMET = EntityDataManager.createKey(EntityMaid.class, DataSerializers.BOOLEAN);
     /**
      * 无敌状态不会主动同步至客户端
      */
@@ -212,7 +214,6 @@ public class EntityMaid extends AbstractEntityMaid {
         this.tasks.addTask(4, new EntityMaidOpenDoor(this, true));
         this.tasks.addTask(4, new EntityMaidFindJoyBlock(this, 0.8f));
 
-        this.tasks.addTask(5, new EntityMaidStorage(this, 0.8f));
         this.tasks.addTask(6, new EntityMaidPickup(this, 0.8f));
         this.tasks.addTask(6, new EntityMaidFollowOwner(this, 0.8f, 5.0f, 2.0f));
 
@@ -249,6 +250,7 @@ public class EntityMaid extends AbstractEntityMaid {
         this.dataManager.register(COMPASS_MODE, ItemKappaCompass.Mode.NONE.ordinal());
         this.dataManager.register(SLEEP, false);
         this.dataManager.register(FAVORABILITY, 0);
+        this.dataManager.register(SHOW_HELMET, true);
     }
 
     @Override
@@ -505,10 +507,12 @@ public class EntityMaid extends AbstractEntityMaid {
             if (!simulate) {
                 // 这是向客户端同步数据用的，如果加了这个方法，会有短暂的拾取动画和音效
                 this.onItemPickup(entityItem, count - itemstack.getCount());
-                PICKUP_SOUND_COUNT--;
-                if (PICKUP_SOUND_COUNT == 0) {
-                    this.playSound(MaidSoundEvent.MAID_ITEM_GET, 1, 1);
-                    PICKUP_SOUND_COUNT = GeneralConfig.MAID_CONFIG.maidPickupSoundInterval;
+                if (!MinecraftForge.EVENT_BUS.post(new MaidPlaySoundEvent(this))) {
+                    PICKUP_SOUND_COUNT--;
+                    if (PICKUP_SOUND_COUNT == 0) {
+                        this.playSound(MaidSoundEvent.MAID_ITEM_GET, 1, 1);
+                        PICKUP_SOUND_COUNT = GeneralConfig.MAID_CONFIG.maidPickupSoundInterval;
+                    }
                 }
                 // 如果遍历塞完后发现为空了
                 if (itemstack.isEmpty()) {
@@ -528,14 +532,16 @@ public class EntityMaid extends AbstractEntityMaid {
     /**
      * 捡起经验球部分的逻辑
      */
-    private void pickupXPOrb(EntityXPOrb entityXPOrb) {
+    public void pickupXPOrb(EntityXPOrb entityXPOrb) {
         if (!this.world.isRemote && entityXPOrb.isEntityAlive() && entityXPOrb.delayBeforeCanPickup == 0) {
             // 这是向客户端同步数据用的，如果加了这个方法，会有短暂的拾取动画和音效
             this.onItemPickup(entityXPOrb, 1);
-            PICKUP_SOUND_COUNT--;
-            if (PICKUP_SOUND_COUNT == 0) {
-                this.playSound(MaidSoundEvent.MAID_ITEM_GET, 1, 1);
-                PICKUP_SOUND_COUNT = GeneralConfig.MAID_CONFIG.maidPickupSoundInterval;
+            if (!MinecraftForge.EVENT_BUS.post(new MaidPlaySoundEvent(this))) {
+                PICKUP_SOUND_COUNT--;
+                if (PICKUP_SOUND_COUNT == 0) {
+                    this.playSound(MaidSoundEvent.MAID_ITEM_GET, 1, 1);
+                    PICKUP_SOUND_COUNT = GeneralConfig.MAID_CONFIG.maidPickupSoundInterval;
+                }
             }
 
             // 对经验修补的应用，因为全部来自于原版，所以效果也是相同的
@@ -555,14 +561,16 @@ public class EntityMaid extends AbstractEntityMaid {
     /**
      * 捡起 P 点部分的逻辑
      */
-    private void pickupPowerPoint(EntityPowerPoint powerPoint) {
+    public void pickupPowerPoint(EntityPowerPoint powerPoint) {
         if (!this.world.isRemote && powerPoint.isEntityAlive() && powerPoint.delayBeforeCanPickup == 0) {
             // 这是向客户端同步数据用的，如果加了这个方法，会有短暂的拾取动画和音效
             powerPoint.onPickup(this, 1);
-            PICKUP_SOUND_COUNT--;
-            if (PICKUP_SOUND_COUNT == 0) {
-                this.playSound(MaidSoundEvent.MAID_ITEM_GET, 1, 1);
-                PICKUP_SOUND_COUNT = GeneralConfig.MAID_CONFIG.maidPickupSoundInterval;
+            if (!MinecraftForge.EVENT_BUS.post(new MaidPlaySoundEvent(this))) {
+                PICKUP_SOUND_COUNT--;
+                if (PICKUP_SOUND_COUNT == 0) {
+                    this.playSound(MaidSoundEvent.MAID_ITEM_GET, 1, 1);
+                    PICKUP_SOUND_COUNT = GeneralConfig.MAID_CONFIG.maidPickupSoundInterval;
+                }
             }
 
             // 对经验修补的应用，因为全部来自于原版，所以效果也是相同的
@@ -600,10 +608,12 @@ public class EntityMaid extends AbstractEntityMaid {
             if (!simulate) {
                 // 这是向客户端同步数据用的，如果加了这个方法，会有短暂的拾取动画和音效
                 this.onItemPickup(arrow, 1);
-                PICKUP_SOUND_COUNT--;
-                if (PICKUP_SOUND_COUNT == 0) {
-                    this.playSound(MaidSoundEvent.MAID_ITEM_GET, 1, 1);
-                    PICKUP_SOUND_COUNT = GeneralConfig.MAID_CONFIG.maidPickupSoundInterval;
+                if (!MinecraftForge.EVENT_BUS.post(new MaidPlaySoundEvent(this))) {
+                    PICKUP_SOUND_COUNT--;
+                    if (PICKUP_SOUND_COUNT == 0) {
+                        this.playSound(MaidSoundEvent.MAID_ITEM_GET, 1, 1);
+                        PICKUP_SOUND_COUNT = GeneralConfig.MAID_CONFIG.maidPickupSoundInterval;
+                    }
                 }
                 arrow.setDead();
             }
@@ -637,8 +647,6 @@ public class EntityMaid extends AbstractEntityMaid {
             } else {
                 MinecraftForge.EVENT_BUS.post(new FavorabilityEvent(EventType.HURT_BY_PLAYER, this));
             }
-        } else {
-            MinecraftForge.EVENT_BUS.post(new FavorabilityEvent(EventType.HURT, this));
         }
         return super.attackEntityFrom(source, amount);
     }
@@ -1047,6 +1055,9 @@ public class EntityMaid extends AbstractEntityMaid {
         if (compound.hasKey(NBT.FAVORABILITY.getName())) {
             setFavorability(compound.getInteger(NBT.FAVORABILITY.getName()));
         }
+        if (compound.hasKey(NBT.SHOW_HELMET.getName())) {
+            setShowHelmet(compound.getBoolean(NBT.SHOW_HELMET.getName()));
+        }
         if (compound.hasKey(NBT.JOY_TICK_DATA.getName())) {
             joyTickData = JoyType.compoundToJoyTickData(compound.getCompoundTag(NBT.JOY_TICK_DATA.getName()));
         }
@@ -1086,6 +1097,7 @@ public class EntityMaid extends AbstractEntityMaid {
         compound.setBoolean(NBT.CAN_RIDING.getName(), canRiding);
         compound.setBoolean(NBT.SLEEP.getName(), isSleep());
         compound.setInteger(NBT.FAVORABILITY.getName(), getFavorability());
+        compound.setBoolean(NBT.SHOW_HELMET.getName(), isShowHelmet());
         compound.setTag(NBT.JOY_TICK_DATA.getName(), JoyType.joyTickDataToCompound(joyTickData));
     }
 
@@ -1108,6 +1120,9 @@ public class EntityMaid extends AbstractEntityMaid {
     @Nullable
     @Override
     protected SoundEvent getAmbientSound() {
+        if (MinecraftForge.EVENT_BUS.post(new MaidPlaySoundEvent(this))) {
+            return null;
+        }
         return task.getAmbientSound(this);
     }
 
@@ -1124,6 +1139,9 @@ public class EntityMaid extends AbstractEntityMaid {
     @Nullable
     @Override
     protected SoundEvent getHurtSound(DamageSource damageSourceIn) {
+        if (MinecraftForge.EVENT_BUS.post(new MaidPlaySoundEvent(this))) {
+            return null;
+        }
         if (damageSourceIn.isFireDamage()) {
             return MaidSoundEvent.MAID_HURT_FIRE;
         } else if (damageSourceIn.getTrueSource() instanceof EntityPlayer) {
@@ -1141,6 +1159,9 @@ public class EntityMaid extends AbstractEntityMaid {
     @Nullable
     @Override
     protected SoundEvent getDeathSound() {
+        if (MinecraftForge.EVENT_BUS.post(new MaidPlaySoundEvent(this))) {
+            return null;
+        }
         return MaidSoundEvent.MAID_DEATH;
     }
 
@@ -1548,6 +1569,14 @@ public class EntityMaid extends AbstractEntityMaid {
         this.dataManager.set(FAVORABILITY, point);
     }
 
+    public boolean isShowHelmet() {
+        return this.dataManager.get(SHOW_HELMET);
+    }
+
+    public void setShowHelmet(boolean isHide) {
+        this.dataManager.set(SHOW_HELMET, isHide);
+    }
+
     public EnumBackPackLevel getBackLevel() {
         return EnumBackPackLevel.getEnumLevelByNum(this.dataManager.get(BACKPACK_LEVEL));
     }
@@ -1812,6 +1841,8 @@ public class EntityMaid extends AbstractEntityMaid {
         SLEEP("MaidIsSleep"),
         // 女仆好感度
         FAVORABILITY("MaidFavorability"),
+        // 女仆显示头盔
+        SHOW_HELMET("MaidShowHelmet"),
         // 女仆娱乐设施的计数器
         JOY_TICK_DATA("MaidJoyTickData");
 

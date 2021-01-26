@@ -67,6 +67,9 @@ public final class MaidModel {
         registerRender(MaidItems.TOMBSTONE_BAUBLE);
         registerRender(MaidItems.NIMBLE_FABRIC);
         registerRender(MaidItems.SUBSTITUTE_JIZO);
+        registerRender(MaidItems.WIRELESS_IO);
+        registerRender(MaidItems.ITEM_MAGNET_BAUBLE);
+        registerRender(MaidItems.MUTE_BAUBLE);
 
         registerRender(MaidItems.KAPPA_COMPASS);
         registerRender(MaidItems.MARISA_BROOM);
@@ -85,6 +88,10 @@ public final class MaidModel {
         registerRender(MaidItems.CHISEL);
         registerRender(MaidItems.POWER_POINT);
         registerRender(MaidItems.MAID_BED);
+        registerRender(MaidItems.HAMMER);
+        registerRender(MaidItems.FURNACE_GUIDE);
+        registerRender(MaidItems.POTION_GUIDE);
+        registerRender(MaidItems.TRUMPET);
 
         register2d3dRender(MaidItems.HAKUREI_GOHEI);
         register2d3dRender(MaidItems.MAID_BEACON);
@@ -194,6 +201,21 @@ public final class MaidModel {
                 case 2:
                 default:
                     return smartSlabFull;
+            }
+        });
+
+        ModelResourceLocation favToolFull = getModelRl(MaidItems.CREATIVE_FAVORABILITY_TOOL, 0);
+        ModelResourceLocation favToolAdd = getModelRl(MaidItems.CREATIVE_FAVORABILITY_TOOL, 1);
+        ModelResourceLocation favToolReduce = getModelRl(MaidItems.CREATIVE_FAVORABILITY_TOOL, 2);
+        ModelBakery.registerItemVariants(MaidItems.CREATIVE_FAVORABILITY_TOOL, favToolFull, favToolAdd, favToolReduce);
+        ModelLoader.setCustomMeshDefinition(MaidItems.CREATIVE_FAVORABILITY_TOOL, stack -> {
+            switch (stack.getMetadata()) {
+                case 1:
+                    return favToolAdd;
+                case 2:
+                    return favToolReduce;
+                default:
+                    return favToolFull;
             }
         });
     }

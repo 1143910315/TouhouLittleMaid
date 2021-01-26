@@ -2,6 +2,7 @@ package com.github.tartaricacid.touhoulittlemaid.network.simpleimpl;
 
 import com.github.tartaricacid.touhoulittlemaid.tileentity.TileEntityMaidBeacon;
 import io.netty.buffer.ByteBuf;
+import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
@@ -40,10 +41,13 @@ public class SetBeaconPotionMessage implements IMessage {
         public IMessage onMessage(SetBeaconPotionMessage message, MessageContext ctx) {
             if (ctx.side == Side.SERVER) {
                 FMLCommonHandler.instance().getWorldThread(ctx.netHandler).addScheduledTask(() -> {
-                    World world = ctx.getServerHandler().player.world;
-                    TileEntity te = world.getTileEntity(message.pos);
-                    if (te instanceof TileEntityMaidBeacon) {
-                        ((TileEntityMaidBeacon) te).setPotionIndex(message.potionIndex);
+                    EntityPlayerMP player = ctx.getServerHandler().player;
+                    World world = player.world;
+                    if (world.isBlockLoaded(message.pos)) {
+                        TileEntity te = world.getTileEntity(message.pos);
+                        if (te instanceof TileEntityMaidBeacon) {
+                            ((TileEntityMaidBeacon) te).setPotionIndex(message.potionIndex);
+                        }
                     }
                 });
             }

@@ -8,11 +8,9 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemBlock;
 import net.minecraft.item.ItemMonsterPlacer;
 import net.minecraft.item.ItemStack;
-import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.util.NonNullList;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.event.RegistryEvent;
-import net.minecraftforge.fml.common.Loader;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.registry.GameRegistry;
@@ -47,6 +45,10 @@ public final class MaidItems {
     public static Item NIMBLE_FABRIC;
     @GameRegistry.ObjectHolder(TouhouLittleMaid.MOD_ID + ":" + "marisa_broom")
     public static Item MARISA_BROOM;
+    @GameRegistry.ObjectHolder(TouhouLittleMaid.MOD_ID + ":" + "item_magnet_bauble")
+    public static Item ITEM_MAGNET_BAUBLE;
+    @GameRegistry.ObjectHolder(TouhouLittleMaid.MOD_ID + ":" + "mute_bauble")
+    public static Item MUTE_BAUBLE;
     @GameRegistry.ObjectHolder(TouhouLittleMaid.MOD_ID + ":" + "camera")
     public static Item CAMERA;
     @GameRegistry.ObjectHolder(TouhouLittleMaid.MOD_ID + ":" + "photo")
@@ -97,6 +99,18 @@ public final class MaidItems {
     public static Item MAID_JOY;
     @GameRegistry.ObjectHolder(TouhouLittleMaid.MOD_ID + ":" + "smart_slab")
     public static Item SMART_SLAB;
+    @GameRegistry.ObjectHolder(TouhouLittleMaid.MOD_ID + ":" + "wireless_io")
+    public static Item WIRELESS_IO;
+    @GameRegistry.ObjectHolder(TouhouLittleMaid.MOD_ID + ":" + "hammer")
+    public static Item HAMMER;
+    @GameRegistry.ObjectHolder(TouhouLittleMaid.MOD_ID + ":" + "furnace_guide")
+    public static Item FURNACE_GUIDE;
+    @GameRegistry.ObjectHolder(TouhouLittleMaid.MOD_ID + ":" + "potion_guide")
+    public static Item POTION_GUIDE;
+    @GameRegistry.ObjectHolder(TouhouLittleMaid.MOD_ID + ":" + "trumpet")
+    public static Item TRUMPET;
+    @GameRegistry.ObjectHolder(TouhouLittleMaid.MOD_ID + ":" + "creative_favorability_tool")
+    public static Item CREATIVE_FAVORABILITY_TOOL;
 
     public static CreativeTabs MAIN_TABS = new MaidCreativeTabs("main") {
         @SideOnly(Side.CLIENT)
@@ -111,16 +125,6 @@ public final class MaidItems {
             addSpawnEgg("entity.passive.maid", items);
             addSpawnEgg("entity.monster.rinnosuke", items);
             addSpawnEgg("entity.monster.fairy", items);
-            if (Loader.isModLoaded("patchouli")) {
-                Item book = Item.getByNameOrId("patchouli:guide_book");
-                if (book != null) {
-                    NBTTagCompound tag = new NBTTagCompound();
-                    tag.setString("patchouli:book", "touhou_little_maid:memorizable_gensokyo");
-                    ItemStack stack = new ItemStack(book);
-                    stack.setTagCompound(tag);
-                    items.add(stack);
-                }
-            }
             super.displayAllRelevantItems(items);
         }
     };
@@ -158,6 +162,9 @@ public final class MaidItems {
         event.getRegistry().register(getDamageableBaubles(64, "drown_protect_bauble"));
         event.getRegistry().register(getDamageableBaubles(64, "nimble_fabric"));
         event.getRegistry().register(getNormalBaubles("tombstone_bauble"));
+        event.getRegistry().register(new ItemWirelessIO().setRegistryName("wireless_io"));
+        event.getRegistry().register(getNormalBaubles("item_magnet_bauble"));
+        event.getRegistry().register(getNormalBaubles("mute_bauble"));
 
         event.getRegistry().register(new ItemKappaCompass().setRegistryName("kappa_compass"));
         event.getRegistry().register(new ItemHakureiGohei().setRegistryName("hakurei_gohei"));
@@ -186,6 +193,11 @@ public final class MaidItems {
         event.getRegistry().register(new ItemMaidBed().setRegistryName("maid_bed"));
         event.getRegistry().register(new ItemMaidJoy().setRegistryName("maid_joy"));
         event.getRegistry().register(new ItemSmartSlab().setRegistryName("smart_slab"));
+        event.getRegistry().register(new ItemHammer().setRegistryName("hammer"));
+        event.getRegistry().register(new ItemFurnaceGuide().setRegistryName("furnace_guide"));
+        event.getRegistry().register(new ItemPotionGuide().setRegistryName("potion_guide"));
+        event.getRegistry().register(new ItemTrumpet().setRegistryName("trumpet"));
+        event.getRegistry().register(new ItemCreativeFavorabilityTool().setRegistryName("creative_favorability_tool"));
 
         event.getRegistry().register(new ItemMaidVehicle().setRegistryName("maid_vehicle"));
         event.getRegistry().register(new ItemBlock(MaidBlocks.GRID).setRegistryName("grid"));

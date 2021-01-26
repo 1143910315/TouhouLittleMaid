@@ -148,6 +148,9 @@ public class CommonProxy {
         LittleMaidAPI.registerBauble(ItemDefinition.of(MaidItems.DROWN_PROTECT_BAUBLE), new DrownProtectBauble());
         LittleMaidAPI.registerBauble(ItemDefinition.of(MaidItems.TOMBSTONE_BAUBLE), new TombstoneBauble());
         LittleMaidAPI.registerBauble(ItemDefinition.of(MaidItems.NIMBLE_FABRIC), new NimbleFabricBauble());
+        LittleMaidAPI.registerBauble(ItemDefinition.of(MaidItems.WIRELESS_IO), new WirelessIOBauble());
+        LittleMaidAPI.registerBauble(ItemDefinition.of(MaidItems.ITEM_MAGNET_BAUBLE), new ItemMagnetBauble());
+        LittleMaidAPI.registerBauble(ItemDefinition.of(MaidItems.MUTE_BAUBLE), new MuteBauble());
 
         // 注册女仆模式
         LittleMaidAPI.registerTask(new TaskAttack());
@@ -166,6 +169,9 @@ public class CommonProxy {
         LittleMaidAPI.registerTask(new TaskTorch());
         LittleMaidAPI.registerTask(new TaskFeedAnimal());
         LittleMaidAPI.registerTask(new TaskExtinguishing());
+        LittleMaidAPI.registerTask(new TaskHammer());
+        LittleMaidAPI.registerTask(new TaskFurnace());
+        LittleMaidAPI.registerTask(new TaskBrewing());
 
         // 注册 FarmHandler 和 FeedHandler
         LittleMaidAPI.registerFarmHandler(new VanillaNormalFarmHandler());
@@ -287,6 +293,11 @@ public class CommonProxy {
         INSTANCE.registerMessage(SendClientPackMessage.Handler.class, SendClientPackMessage.class, 29, Side.CLIENT);
         INSTANCE.registerMessage(SendToClientDrawMessage.Handler.class, SendToClientDrawMessage.class, 30, Side.CLIENT);
         INSTANCE.registerMessage(SendToServerDrawMessage.Handler.class, SendToServerDrawMessage.class, 31, Side.SERVER);
+        INSTANCE.registerMessage(WirelessIOGuiMessage.Handler.class, WirelessIOGuiMessage.class, 32, Side.SERVER);
+        INSTANCE.registerMessage(WirelessIOSlotConfigMessage.Handler.class, WirelessIOSlotConfigMessage.class, 33, Side.SERVER);
+        INSTANCE.registerMessage(SetBeaconOverflowMessage.Handler.class, SetBeaconOverflowMessage.class, 34, Side.SERVER);
+        INSTANCE.registerMessage(MaidShowHelmetMessage.Handler.class, MaidShowHelmetMessage.class, 35, Side.SERVER);
+        INSTANCE.registerMessage(PotionGuideIndexMessage.Handler.class, PotionGuideIndexMessage.class, 36, Side.SERVER);
     }
 
     /**
