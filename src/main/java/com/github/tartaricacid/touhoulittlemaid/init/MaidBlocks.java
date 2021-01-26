@@ -57,5 +57,6 @@ public final class MaidBlocks {
         GameRegistry.registerTileEntity(TileEntityMaidBeacon.class, new ResourceLocation(TouhouLittleMaid.MOD_ID, "maid_beacon"));
         GameRegistry.registerTileEntity(TileEntityStatue.class, new ResourceLocation(TouhouLittleMaid.MOD_ID, "statue"));
         GameRegistry.registerTileEntity(TileEntityMaidJoy.class, new ResourceLocation(TouhouLittleMaid.MOD_ID, "maid_joy"));
+        GameRegistry.registerTileEntity(TileEntityTerritory.class, new ResourceLocation(TouhouLittleMaid.MOD_ID, "territory"));
     }
 }
