@@ -11,6 +11,7 @@ import net.minecraft.world.phys.AABB;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -39,12 +40,19 @@ public class MaidPickupEntitiesSensor extends Sensor<EntityMaid> {
             aabb = maid.getBoundingBox().inflate(radius, VERTICAL_SEARCH_RANGE, radius);
         }
         List<Entity> allEntities = worldIn.getEntitiesOfClass(Entity.class, aabb, Entity::isAlive);
-        allEntities.sort(Comparator.comparingDouble(maid::distanceToSqr));
+        long count = Math.max(1, allEntities.stream().filter(entity -> entity instanceof EntityMaid).filter(entity -> Objects.equals(((EntityMaid) entity).getOwner(), maid.getOwner())).count());
+        float baseProbability = radius * radius / count;
         List<Entity> optional = allEntities.stream()
                 .filter(e -> maid.canPickup(e, true))
+                .filter(e -> {
+                    double distanceToSqr = e.distanceToSqr(maid);
+                    return distanceToSqr < 1 || baseProbability / distanceToSqr > Math.random();
+                })
                 .filter(e -> e.closerThan(maid, radius + 1))
                 .filter(e -> maid.isWithinRestriction(e.blockPosition()))
-                .filter(maid::hasLineOfSight).collect(Collectors.toList());
+                .filter(maid::hasLineOfSight)
+                .sorted(Comparator.comparingDouble(maid::distanceToSqr))
+                .collect(Collectors.toList());
         maid.getBrain().setMemory(InitEntities.VISIBLE_PICKUP_ENTITIES.get(), optional);
     }
 }
