@@ -14,7 +14,7 @@ public class MaidPathNavigation extends GroundPathNavigation {
 
     @Override
     protected PathFinder createPathFinder(int range) {
-        this.nodeEvaluator = new MaidNodeEvaluator();
+        this.nodeEvaluator = new MaidNodeEvaluator(mob);
         this.nodeEvaluator.setCanOpenDoors(true);
         this.nodeEvaluator.setCanPassDoors(true);
         this.nodeEvaluator.setCanFloat(true);
