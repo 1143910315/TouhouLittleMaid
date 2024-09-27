@@ -724,16 +724,27 @@ public class EntityMaid extends TamableAnimal implements CrossbowAttackMob, IMai
             if (checkInWater && pickupEntity.isInWater()) {
                 return false;
             }
-            if (pickupEntity instanceof ItemEntity) {
-                return pickupItem((ItemEntity) pickupEntity, true);
+            if (pickupEntity instanceof ItemEntity itemEntity) {
+                int itemAge = itemEntity.getAge();
+                return (itemAge <= 0 || itemAge > 20) && pickupItem(itemEntity, true);
             }
-            if (pickupEntity instanceof AbstractArrow) {
-                return pickupArrow((AbstractArrow) pickupEntity, true);
+            if (pickupEntity instanceof AbstractArrow abstractArrow) {
+                CompoundTag compound = new CompoundTag();
+                abstractArrow.addAdditionalSaveData(compound);
+                short arrowLife = compound.getShort("life");
+                return (arrowLife <= 0 || arrowLife > 20) && pickupArrow((AbstractArrow) pickupEntity, true);
             }
-            if (pickupEntity instanceof ExperienceOrb) {
-                return true;
+            if (pickupEntity instanceof ExperienceOrb experienceOrb) {
+                CompoundTag compound = new CompoundTag();
+                experienceOrb.addAdditionalSaveData(compound);
+                short experienceOrbAge = compound.getShort("Age");
+                return (experienceOrbAge <= 0 || experienceOrbAge > 20);
             }
-            return pickupEntity instanceof EntityPowerPoint;
+            if (pickupEntity instanceof EntityPowerPoint entityPowerPoint) {
+                int entityPowerPointAge = entityPowerPoint.age;
+                return entityPowerPointAge <= 0 || entityPowerPointAge > 20;
+            }
+            return false;
         }
         return false;
     }
