@@ -420,20 +420,36 @@ public class EntityMaid extends TamableAnimal implements CrossbowAttackMob, IMai
             if (!entityList.isEmpty() && this.isAlive()) {
                 for (Entity entityPickup : entityList) {
                     // 如果是物品
-                    if (entityPickup instanceof ItemEntity) {
-                        pickupItem((ItemEntity) entityPickup, false);
+                    if (entityPickup instanceof ItemEntity itemEntity) {
+                        int itemAge = itemEntity.getAge();
+                        if (itemAge <= 0 || itemAge > 20) {
+                            pickupItem(itemEntity, false);
+                        }
                     }
                     // 如果是经验
-                    if (entityPickup instanceof ExperienceOrb) {
-                        pickupXPOrb((ExperienceOrb) entityPickup);
+                    if (entityPickup instanceof ExperienceOrb experienceOrb) {
+                        CompoundTag compound = new CompoundTag();
+                        experienceOrb.addAdditionalSaveData(compound);
+                        short experienceOrbAge = compound.getShort("Age");
+                        if (experienceOrbAge <= 0 || experienceOrbAge > 20) {
+                            pickupXPOrb(experienceOrb);
+                        }
                     }
                     // 如果是 P 点
-                    if (entityPickup instanceof EntityPowerPoint) {
-                        pickupPowerPoint((EntityPowerPoint) entityPickup);
+                    if (entityPickup instanceof EntityPowerPoint entityPowerPoint) {
+                        int entityPowerPointAge = entityPowerPoint.age;
+                        if (entityPowerPointAge <= 0 || entityPowerPointAge > 20) {
+                            pickupPowerPoint(entityPowerPoint);
+                        }
                     }
                     // 如果是箭
-                    if (entityPickup instanceof AbstractArrow) {
-                        pickupArrow((AbstractArrow) entityPickup, false);
+                    if (entityPickup instanceof AbstractArrow abstractArrow) {
+                        CompoundTag compound = new CompoundTag();
+                        abstractArrow.addAdditionalSaveData(compound);
+                        short arrowLife = compound.getShort("life");
+                        if (arrowLife <= 0 || arrowLife > 20) {
+                            pickupArrow(abstractArrow, false);
+                        }
                     }
                 }
             }
