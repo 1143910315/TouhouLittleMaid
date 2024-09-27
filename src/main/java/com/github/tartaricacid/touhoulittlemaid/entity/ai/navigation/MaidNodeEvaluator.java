@@ -1,6 +1,9 @@
 package com.github.tartaricacid.touhoulittlemaid.entity.ai.navigation;
 
+import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.FenceGateBlock;
 import net.minecraft.world.level.block.state.BlockState;
@@ -11,16 +14,36 @@ import net.minecraft.world.level.pathfinder.WalkNodeEvaluator;
  * 该方法仅修改了栅栏门的寻路判断
  */
 public class MaidNodeEvaluator extends WalkNodeEvaluator {
+    private final Mob maid;
+
+    public MaidNodeEvaluator(Mob mob){
+        maid = mob;
+    }
+
     @Override
     public BlockPathTypes getBlockPathType(BlockGetter level, int pX, int pY, int pZ) {
         return getMaidBlockPathTypeStatic(level, new BlockPos.MutableBlockPos(pX, pY, pZ));
     }
 
-    private static BlockPathTypes getMaidBlockPathTypeStatic(BlockGetter level, BlockPos.MutableBlockPos pos) {
+    private BlockPathTypes getMaidBlockPathTypeStatic(BlockGetter level, BlockPos.MutableBlockPos pos) {
         int x = pos.getX();
         int y = pos.getY();
         int z = pos.getZ();
 
+        if (maid instanceof EntityMaid entityMaid) {
+            LivingEntity owner = entityMaid.getOwner();
+            if (owner != null) {
+                int minX = (int) (owner.getX() - 0.5);
+                int maxX = (int) (owner.getX() + 0.5);
+                int minY = (int) (owner.getY());
+                int maxY = (int) (owner.getY() + 2);
+                int minZ = (int) (owner.getZ() - 0.5);
+                int maxZ = (int) (owner.getZ() + 0.5);
+                if (minX <= x && x <= maxX && minY <= y && y <= maxY && minZ <= z && z <= maxZ) {
+                    return BlockPathTypes.BLOCKED;
+                }
+            }
+        }
         BlockPathTypes type = getMaidBlockPathTypeRaw(level, pos);
         if (type == BlockPathTypes.OPEN && y >= level.getMinBuildHeight() + 1) {
             BlockPathTypes typeBelow = getMaidBlockPathTypeRaw(level, pos.set(x, y - 1, z));
