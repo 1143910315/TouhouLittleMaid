@@ -1,5 +1,6 @@
 package com.github.tartaricacid.touhoulittlemaid.entity.ai.brain.task;
 
+import com.github.tartaricacid.touhoulittlemaid.entity.item.EntityBroom;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.init.InitEntities;
 import com.google.common.collect.ImmutableMap;
@@ -56,7 +57,7 @@ public class MaidUpdateActivityFromSchedule extends Behavior<EntityMaid> {
 
     private static void updateActivityFromSchedule(ServerLevel level, EntityMaid maid, Brain<EntityMaid> brain, long gameTime) {
         long dayTime = level.getDayTime();
-        if (maid.isMaidInSittingPose() || maid.isPassenger()) {
+        if (maid.isMaidInSittingPose() || maid.getVehicle() != null && !(maid.getVehicle() instanceof EntityBroom)) {
             if (gameTime - brain.lastScheduleUpdate > 20L) {
                 brain.lastScheduleUpdate = gameTime;
                 Activity activity = brain.getSchedule().getActivityAt((int) (dayTime % 24000L));

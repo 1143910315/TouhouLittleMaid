@@ -1,6 +1,8 @@
 package com.github.tartaricacid.touhoulittlemaid.entity.item;
 
+import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
+import com.github.tartaricacid.touhoulittlemaid.init.InitEntities;
 import com.github.tartaricacid.touhoulittlemaid.init.InitItems;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
@@ -16,11 +18,15 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.*;
+import net.minecraft.world.entity.ai.behavior.BlockPosTracker;
+import net.minecraft.world.entity.ai.behavior.PositionTracker;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -37,10 +43,7 @@ public class EntityBroom extends AbstractEntityFromItem implements OwnableEntity
     private static final EntityDataAccessor<Optional<UUID>> OWNER_ID = SynchedEntityData.defineId(EntityBroom.class, EntityDataSerializers.OPTIONAL_UUID);
     private static final String OWNER_UUID_TAG = "OwnerUUID";
 
-    private boolean keyForward = false;
-    private boolean keyBack = false;
-    private boolean keyLeft = false;
-    private boolean keyRight = false;
+    private Vec3 targetPosition = null;
 
     public EntityBroom(EntityType<EntityBroom> entityType, Level worldIn) {
         super(entityType, worldIn);
@@ -91,18 +94,35 @@ public class EntityBroom extends AbstractEntityFromItem implements OwnableEntity
         this.entityData.get(OWNER_ID).ifPresent(uuid -> compound.putUUID(OWNER_UUID_TAG, uuid));
     }
 
-    @Override
-    public void travel(Vec3 vec3) {
-        Entity entity = this.getControllingPassenger();
-        if (entity instanceof Player player && this.isVehicle() && this.hasPassenger(e -> e instanceof EntityMaid)) {
-            if (level.isClientSide) {
-                // 不要问我为什么客户端数据能跑到服务端来
-                // 一定是玄学
-                keyForward = keyForward();
-                keyBack = keyBack();
-                keyLeft = keyLeft();
-                keyRight = keyRight();
+    @Nullable
+    public EntityMaid getMaidControllingPassenger() {
+        EntityMaid entityMaid = null;
+        for (Entity entity : this.getPassengers()) {
+            if (entity instanceof EntityMaid maid) {
+                entityMaid = maid;
             }
+            if (entity instanceof Player) {
+                return null;
+            }
+        }
+        return entityMaid;
+    }
+
+    @Override
+    protected void tickRidden(Player player, Vec3 pTravelVector) {
+        // 记得将 fall distance 设置为 0，否则会摔死
+        this.fallDistance = 0;
+
+        // 施加上下晃动
+        if (!this.onGround()) {
+            this.addDeltaMovement(new Vec3(0, 0.01 * Math.sin(this.tickCount * Math.PI / 18), 0));
+        }
+
+        if (this.isVehicle() && this.hasPassenger(e -> e instanceof EntityMaid)) {
+            boolean keyForward = keyForward();
+            boolean keyBack = keyBack();
+            boolean keyLeft = keyLeft();
+            boolean keyRight = keyRight();
 
             // 按键控制扫帚各个方向速度
             float strafe = keyLeft ? 0.5f : (keyRight ? -0.5f : 0);
@@ -111,6 +131,75 @@ public class EntityBroom extends AbstractEntityFromItem implements OwnableEntity
 
             this.moveRelative(0.02f, new Vec3(strafe, vertical, forward));
             this.move(MoverType.SELF, this.getDeltaMovement());
+        }
+
+        // 与旋转有关系的一堆东西，用来控制扫帚朝向
+        this.yRotO = this.yBodyRot = this.yHeadRot = this.getYRot();
+        this.setRot(player.getYRot(), player.getXRot());
+    }
+
+    @Override
+    public void travel(Vec3 vec3) {
+        this.yRotO = this.yBodyRot = this.yHeadRot = this.getYRot();
+        EntityMaid maid = getMaidControllingPassenger();
+        if (maid != null) {
+            if (maid.getOwner() instanceof Player player) {
+                Optional<PositionTracker> positionTracker = maid.getBrain().getMemory(InitEntities.TARGET_POS.get());
+                positionTracker.ifPresent(tracker -> {
+                    Vec3 position = tracker.currentPosition();
+                    if (positionIsSafe(position)) {
+                        targetPosition = position;
+                    } else {
+                        position = position.add(0, 1, 0);
+                        if (positionIsSafe(position)) {
+                            targetPosition = position;
+                        }
+                    }
+                });
+                if (targetPosition == null || targetPosition.distanceTo(player.position()) > maid.getRestrictRadius() || !positionIsSafe(targetPosition)) {
+                    double x = player.position().x + level.random.nextDouble() * 2 * maid.getRestrictRadius() - maid.getRestrictRadius();
+                    double y = player.position().y + level.random.nextDouble() * 2 * maid.getRestrictRadius() - maid.getRestrictRadius();
+                    double z = player.position().z + level.random.nextDouble() * 2 * maid.getRestrictRadius() - maid.getRestrictRadius();
+                    targetPosition = new Vec3(x, y, z);
+                } else {
+                    double distance = new Vec3(targetPosition.x, position().y, targetPosition.z).distanceTo(position());
+                    if (distance > 0.5) {
+                        double speed = Math.pow(distance / 4, 3);
+
+                        float angle = (float) (Math.atan((position().x - targetPosition.x) / (targetPosition.z - position().z)) * 180 / Math.PI);
+                        if (targetPosition.x < position().x) {
+                            if (angle < 0) {
+                                angle += 180;
+                            }
+                        } else if (targetPosition.x > position().x) {
+                            if (angle >= 0) {
+                                angle -= 180;
+                            }
+                        } else if (targetPosition.y < position().y) {
+                            angle = -180;
+                        } else {
+                            angle = 0;
+                        }
+                        //TouhouLittleMaid.LOGGER.debug(angle);
+                        if (Float.isFinite(angle)) {
+                            float targetAngle = turnToAngle(angle);
+                            setYRot(targetAngle);
+                            this.yRotO = this.yBodyRot = this.yHeadRot = targetAngle;
+                        }
+
+                        super.travel(new Vec3(0, targetPosition.y < position().y() ? -0.3f : 0.3f, speed));
+                    } else {
+                        super.travel(new Vec3(0, targetPosition.y < position().y() ? -0.3f : 0.3f, 0));
+                    }
+
+                    //setYRot(0);
+                    //this.yRotO = this.yBodyRot = this.yHeadRot = 0;
+                    //super.travel(targetPosition.subtract(position()));
+                }
+                return;
+            }
+        }
+        if (getControllingPassenger() instanceof Player && this.isVehicle() && this.hasPassenger(e -> e instanceof EntityMaid)) {
             return;
         }
         if (!this.onGround()) {
@@ -119,6 +208,46 @@ public class EntityBroom extends AbstractEntityFromItem implements OwnableEntity
             return;
         }
         super.travel(vec3);
+    }
+
+    private float turnToAngle(float angle) {
+        float oldAngle = getYRot();
+        if (oldAngle < angle) {
+            if (oldAngle + 180f > angle) {
+                oldAngle = Math.min(oldAngle + 3, angle);
+            } else {
+                oldAngle = oldAngle - 3;
+                if (oldAngle < -180f) {
+                    oldAngle = Math.max(oldAngle + 360f, angle);
+                }
+            }
+        } else {
+            if (oldAngle - 180f < angle) {
+                oldAngle = Math.max(oldAngle - 3, angle);
+            } else {
+                oldAngle = oldAngle + 3;
+                if (oldAngle >= 180f) {
+                    oldAngle = Math.min(oldAngle - 360f, angle);
+                }
+            }
+        }
+        return oldAngle;
+    }
+
+    private boolean positionIsSafe(Vec3 vec3) {
+        for (int x = (int) (vec3.x - 1); x < vec3.x + 1; x++) {
+            for (int y = (int) (vec3.y); y < vec3.y + 2; y++) {
+                for (int z = (int) (vec3.z - 1); z < vec3.z + 1; z++) {
+                    //BlockEntity blockEntity = level.getBlockEntity(new BlockPos(x, y, z));
+                    BlockState blockState = level.getBlockState(new BlockPos(x, y, z));
+                    FluidState fluidState = level.getFluidState(new BlockPos(x, y, z));
+                    if (!blockState.isAir() && blockState.entityCanStandOn(level, new BlockPos(x, y, z), this) || !fluidState.isEmpty()) {
+                        return false;
+                    }
+                }
+            }
+        }
+        return true;
     }
 
     @Override
@@ -147,22 +276,6 @@ public class EntityBroom extends AbstractEntityFromItem implements OwnableEntity
             return maidOwnerUUID.equals(broomOwnerUUID);
         }
         return false;
-    }
-
-    @Override
-    protected void tickRidden(Player player, Vec3 pTravelVector) {
-        // 记得将 fall distance 设置为 0，否则会摔死
-        this.fallDistance = 0;
-
-        // 施加上下晃动
-        if (!this.onGround()) {
-            this.addDeltaMovement(new Vec3(0, 0.01 * Math.sin(this.tickCount * Math.PI / 18), 0));
-        }
-
-        // 与旋转有关系的一堆东西，用来控制扫帚朝向
-        this.yRotO = this.yBodyRot = this.yHeadRot = this.getYRot();
-        this.setRot(player.getYRot(), player.getXRot());
-        super.tickRidden(player, pTravelVector);
     }
 
     @Override
