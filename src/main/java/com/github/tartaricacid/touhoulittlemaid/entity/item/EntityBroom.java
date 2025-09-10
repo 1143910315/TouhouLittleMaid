@@ -14,15 +14,22 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.tags.FluidTags;
+import net.minecraft.util.Mth;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.*;
+import net.minecraft.world.entity.ai.attributes.AttributeInstance;
+import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.behavior.BlockPosTracker;
 import net.minecraft.world.entity.ai.behavior.PositionTracker;
+import net.minecraft.world.entity.animal.FlyingAnimal;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.enchantment.EnchantmentHelper;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -208,6 +215,20 @@ public class EntityBroom extends AbstractEntityFromItem implements OwnableEntity
             return;
         }
         super.travel(vec3);
+    }
+    public void travelToPosition(Vec3 pTravelVector) {
+        if (this.isControlledByLocalInstance()) {
+            float f2 = level.getBlockState(this.getBlockPosBelowThatAffectsMyMovement()).getFriction(level(), this.getBlockPosBelowThatAffectsMyMovement(), this);
+            float f3 = this.onGround() ? f2 * 0.91F : 0.91F;
+            Vec3 vec35 = this.handleRelativeFrictionAndCalculateMovement(pTravelVector, f2);
+            double d2 = vec35.y;
+            if (this.shouldDiscardFriction()) {
+                this.setDeltaMovement(vec35.x, d2, vec35.z);
+            } else {
+                this.setDeltaMovement(vec35.x * (double)f3, d2 * (double)0.98F, vec35.z * (double)f3);
+            }
+        }
+        this.calculateEntityAnimation(this instanceof FlyingAnimal);
     }
 
     private float turnToAngle(float angle) {

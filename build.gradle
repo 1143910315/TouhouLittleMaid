@@ -36,7 +36,6 @@ minecraft {
     accessTransformer = file('src/main/resources/META-INF/accesstransformer.cfg')
     runs {
         client {
-            jvmArgs "-XX:+AllowEnhancedClassRedefinition"
             workingDirectory project.file('run/client_a')
             property 'forge.logging.markers', 'REGISTRIES'
             property 'forge.logging.console.level', 'debug'
@@ -62,7 +61,6 @@ minecraft {
         }
 
         server {
-            jvmArgs "-XX:+AllowEnhancedClassRedefinition"
             workingDirectory project.file('run/server')
             property 'forge.logging.markers', 'REGISTRIES'
             property 'forge.logging.console.level', 'debug'
