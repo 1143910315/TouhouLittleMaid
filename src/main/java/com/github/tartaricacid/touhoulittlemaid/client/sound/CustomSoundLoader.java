@@ -10,7 +10,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.gson.JsonSyntaxException;
 import com.google.gson.reflect.TypeToken;
-import com.mojang.blaze3d.audio.OggAudioStream;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import org.apache.logging.log4j.Marker;
@@ -21,7 +20,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -120,6 +118,8 @@ public class CustomSoundLoader {
         buffers.put(InitSounds.MAID_TAMED.get().getLocation(), loadSounds(rootPath.resolve("ai"), "tamed"));
         buffers.put(InitSounds.MAID_ITEM_GET.get().getLocation(), loadSounds(rootPath.resolve("ai"), "item_get"));
         buffers.put(InitSounds.MAID_DEATH.get().getLocation(), loadSounds(rootPath.resolve("ai"), "death"));
+        buffers.put(InitSounds.GAME_WIN.get().getLocation(), loadSounds(rootPath.resolve("ai"), "game_win"));
+        buffers.put(InitSounds.GAME_LOST.get().getLocation(), loadSounds(rootPath.resolve("ai"), "game_lost"));
 
         buffers.put(InitSounds.MAID_COLD.get().getLocation(), loadSounds(rootPath.resolve("environment"), "cold"));
         buffers.put(InitSounds.MAID_HOT.get().getLocation(), loadSounds(rootPath.resolve("environment"), "hot"));
@@ -157,13 +157,7 @@ public class CustomSoundLoader {
         }
         for (File file : files) {
             if (file.isFile()) {
-                try (InputStream stream = Files.newInputStream(file.toPath()); OggAudioStream audioStream = new OggAudioStream(stream)) {
-                    ByteBuffer bytebuffer = audioStream.readAll();
-                    sounds.add(new SoundData(bytebuffer, audioStream.getFormat()));
-                    LOGGER.debug(MARKER, "sound: {}", file.getName());
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+                OggReader.readSoundDataFromFile(file, sounds, MARKER);
             }
         }
         return sounds;
@@ -242,6 +236,8 @@ public class CustomSoundLoader {
                     loadSounds(zipFile, buffers, zipEntry, subDir, fileName, InitSounds.MAID_TAMED.get(), "ai", "tamed");
                     loadSounds(zipFile, buffers, zipEntry, subDir, fileName, InitSounds.MAID_ITEM_GET.get(), "ai", "item_get");
                     loadSounds(zipFile, buffers, zipEntry, subDir, fileName, InitSounds.MAID_DEATH.get(), "ai", "death");
+                    loadSounds(zipFile, buffers, zipEntry, subDir, fileName, InitSounds.GAME_WIN.get(), "ai", "game_win");
+                    loadSounds(zipFile, buffers, zipEntry, subDir, fileName, InitSounds.GAME_LOST.get(), "ai", "game_lost");
 
                     loadSounds(zipFile, buffers, zipEntry, subDir, fileName, InitSounds.MAID_COLD.get(), "environment", "cold");
                     loadSounds(zipFile, buffers, zipEntry, subDir, fileName, InitSounds.MAID_HOT.get(), "environment", "hot");
@@ -277,13 +273,7 @@ public class CustomSoundLoader {
     private static void loadSounds(ZipFile zipFile, Map<ResourceLocation, List<SoundData>> buffers, ZipEntry zipEntry, String subDir, String fileName, SoundEvent soundEvent, String checkSubDir, String checkFileName) {
         List<SoundData> sounds = buffers.computeIfAbsent(soundEvent.getLocation(), res -> Lists.newArrayList());
         if (checkSubDir.equals(subDir) && checkFileName(checkFileName, fileName)) {
-            try (InputStream zipEntryStream = zipFile.getInputStream(zipEntry); OggAudioStream audioStream = new OggAudioStream(zipEntryStream)) {
-                ByteBuffer bytebuffer = audioStream.readAll();
-                sounds.add(new SoundData(bytebuffer, audioStream.getFormat()));
-                LOGGER.debug(MARKER, "sound: {}", fileName);
-            } catch (IOException ioe) {
-                ioe.printStackTrace();
-            }
+            OggReader.readSoundDataFromZip(zipFile, zipEntry, fileName, sounds, MARKER);
         }
     }
 }

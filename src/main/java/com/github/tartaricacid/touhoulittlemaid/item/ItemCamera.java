@@ -1,23 +1,31 @@
 package com.github.tartaricacid.touhoulittlemaid.item;
 
+import com.github.tartaricacid.touhoulittlemaid.advancements.maid.TriggerType;
+import com.github.tartaricacid.touhoulittlemaid.api.event.MaidAndItemTransformEvent;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.init.InitEntities;
 import com.github.tartaricacid.touhoulittlemaid.init.InitItems;
 import com.github.tartaricacid.touhoulittlemaid.init.InitSounds;
+import com.github.tartaricacid.touhoulittlemaid.init.InitTrigger;
 import com.github.tartaricacid.touhoulittlemaid.util.MaidRayTraceHelper;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Containers;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.items.ItemHandlerHelper;
 import net.minecraftforge.registries.ForgeRegistries;
 
 import javax.annotation.Nullable;
@@ -26,7 +34,7 @@ import java.util.Objects;
 import java.util.Optional;
 
 public class ItemCamera extends Item {
-    private static final String MAID_INFO = "MaidInfo";
+    public static final String MAID_INFO = "MaidInfo";
 
     public ItemCamera() {
         super((new Properties()).stacksTo(1).durability(50));
@@ -45,6 +53,9 @@ public class ItemCamera extends Item {
                     maid.discard();
                     playerIn.getCooldowns().addCooldown(this, 20);
                     camera.hurtAndBreak(1, playerIn, (e) -> e.broadcastBreakEvent(InteractionHand.MAIN_HAND));
+                    if (playerIn instanceof ServerPlayer serverPlayer) {
+                        InitTrigger.MAID_EVENT.trigger(serverPlayer, TriggerType.PHOTO_MAID);
+                    }
                 }
                 maid.spawnExplosionParticle();
                 playerIn.playSound(InitSounds.CAMERA_USE.get(), 1.0f, 1.0f);
@@ -54,6 +65,27 @@ public class ItemCamera extends Item {
         return super.use(worldIn, playerIn, handIn);
     }
 
+    public static void spawnMaidPhoto(Level worldIn, CompoundTag data, Player playerIn) {
+        ItemStack photo = InitItems.PHOTO.get().getDefaultInstance();
+        CompoundTag photoTag = new CompoundTag();
+        CompoundTag maidTag = new CompoundTag();
+        Optional<Entity> optional = EntityType.create(data, worldIn);
+        if (optional.isEmpty() || !(optional.get() instanceof EntityMaid maid)) {
+            return;
+        }
+        maid.setHomeModeEnable(false);
+        maid.saveWithoutId(maidTag);
+        maidTag.putString("id", Objects.requireNonNull(ForgeRegistries.ENTITY_TYPES.getKey(InitEntities.MAID.get())).toString());
+
+        var event = new MaidAndItemTransformEvent.ToItem(maid, photo, maidTag);
+        MinecraftForge.EVENT_BUS.post(event);
+
+        photoTag.put(MAID_INFO, maidTag);
+        photo.setTag(photoTag);
+
+        ItemHandlerHelper.giveItemToPlayer(playerIn, photo);
+    }
+
     private void spawnMaidPhoto(Level worldIn, EntityMaid maid, Player playerIn) {
         ItemStack photo = InitItems.PHOTO.get().getDefaultInstance();
         CompoundTag photoTag = new CompoundTag();
@@ -61,6 +93,10 @@ public class ItemCamera extends Item {
         maid.setHomeModeEnable(false);
         maid.saveWithoutId(maidTag);
         maidTag.putString("id", Objects.requireNonNull(ForgeRegistries.ENTITY_TYPES.getKey(InitEntities.MAID.get())).toString());
+
+        var event = new MaidAndItemTransformEvent.ToItem(maid, photo, maidTag);
+        MinecraftForge.EVENT_BUS.post(event);
+
         photoTag.put(MAID_INFO, maidTag);
         photo.setTag(photoTag);
         Containers.dropItemStack(worldIn, playerIn.getX(), playerIn.getY(), playerIn.getZ(), photo);

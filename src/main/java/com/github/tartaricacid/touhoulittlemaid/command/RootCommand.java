@@ -1,9 +1,7 @@
 package com.github.tartaricacid.touhoulittlemaid.command;
 
-import com.github.tartaricacid.touhoulittlemaid.command.subcommand.MaidNumCommand;
-import com.github.tartaricacid.touhoulittlemaid.command.subcommand.PackCommand;
-import com.github.tartaricacid.touhoulittlemaid.command.subcommand.PowerCommand;
-import com.github.tartaricacid.touhoulittlemaid.debug.MaidDebugCommand;
+import com.github.tartaricacid.touhoulittlemaid.command.subcommand.*;
+import com.github.tartaricacid.touhoulittlemaid.debug.command.MaidDebugCommand;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import net.minecraft.commands.CommandSourceStack;
@@ -18,9 +16,10 @@ public final class RootCommand {
         root.then(PackCommand.get());
         root.then(PowerCommand.get());
         root.then(MaidNumCommand.get());
-
         root.then(MaidDebugCommand.get());
-
+        root.then(AIChatCommand.get());
+        root.then(MaidCommand.get());
+        root.then(BackupCommand.get());
         dispatcher.register(root);
     }
 }

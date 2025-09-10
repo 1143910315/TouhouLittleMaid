@@ -1,28 +1,20 @@
 package com.github.tartaricacid.touhoulittlemaid.compat.cloth;
 
 import com.github.tartaricacid.touhoulittlemaid.api.event.client.AddClothConfigEvent;
-import com.github.tartaricacid.touhoulittlemaid.config.subconfig.ChairConfig;
-import com.github.tartaricacid.touhoulittlemaid.config.subconfig.MaidConfig;
-import com.github.tartaricacid.touhoulittlemaid.config.subconfig.MiscConfig;
-import com.github.tartaricacid.touhoulittlemaid.config.subconfig.VanillaConfig;
+import com.github.tartaricacid.touhoulittlemaid.config.subconfig.*;
 import com.github.tartaricacid.touhoulittlemaid.event.MaidMealRegConfigEvent;
 import com.google.common.collect.Lists;
 import me.shedaniel.clothconfig2.api.ConfigBuilder;
 import me.shedaniel.clothconfig2.api.ConfigCategory;
 import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
-import me.shedaniel.clothconfig2.impl.builders.DropdownMenuBuilder;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.item.Items;
 import net.minecraftforge.client.ConfigScreenHandler;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.ModLoadingContext;
-import net.minecraftforge.registries.ForgeRegistries;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class MenuIntegration {
     public static ConfigBuilder getConfigBuilder() {
@@ -34,6 +26,8 @@ public class MenuIntegration {
         chairConfig(root, entryBuilder);
         miscConfig(root, entryBuilder);
         vanillaConfig(root, entryBuilder);
+        renderConfig(root, entryBuilder);
+        GlobalAIIntegration.aiChat(root, entryBuilder);
         MinecraftForge.EVENT_BUS.post(new AddClothConfigEvent(root, entryBuilder));
         return root;
     }
@@ -41,26 +35,26 @@ public class MenuIntegration {
     @SuppressWarnings("all")
     private static void maidConfig(ConfigBuilder root, ConfigEntryBuilder entryBuilder) {
         ConfigCategory maid = root.getOrCreateCategory(Component.translatable("config.touhou_little_maid.maid"));
-        maid.addEntry(entryBuilder.startDropdownMenu(Component.translatable("config.touhou_little_maid.maid.maid_tamed_item"),
-                        DropdownMenuBuilder.TopCellElementBuilder.ofItemObject(ForgeRegistries.ITEMS.getValue(new ResourceLocation(MaidConfig.MAID_TAMED_ITEM.get()))),
-                        DropdownMenuBuilder.CellCreatorBuilder.ofItemObject())
-                .setSelections(BuiltInRegistries.ITEM.stream().sorted(Comparator.comparing(Item::toString)).collect(Collectors.toCollection(LinkedHashSet::new)))
-                .setDefaultValue(Items.CAKE).setTooltip(Component.translatable("config.touhou_little_maid.maid.maid_tamed_item.tooltip"))
-                .setSaveConsumer(s -> MaidConfig.MAID_TAMED_ITEM.set(ForgeRegistries.ITEMS.getKey(s).toString())).build());
 
-        maid.addEntry(entryBuilder.startDropdownMenu(Component.translatable("config.touhou_little_maid.maid.maid_temptation_item"),
-                        DropdownMenuBuilder.TopCellElementBuilder.ofItemObject(ForgeRegistries.ITEMS.getValue(new ResourceLocation(MaidConfig.MAID_TEMPTATION_ITEM.get()))),
-                        DropdownMenuBuilder.CellCreatorBuilder.ofItemObject())
-                .setSelections(BuiltInRegistries.ITEM.stream().sorted(Comparator.comparing(Item::toString)).collect(Collectors.toCollection(LinkedHashSet::new)))
-                .setDefaultValue(Items.CAKE).setTooltip(Component.translatable("config.touhou_little_maid.maid.maid_temptation_item.tooltip"))
-                .setSaveConsumer(s -> MaidConfig.MAID_TEMPTATION_ITEM.set(ForgeRegistries.ITEMS.getKey(s).toString())).build());
+        maid.addEntry(entryBuilder.startIntSlider(Component.translatable("config.touhou_little_maid.maid.global_maid_sound_frequency"), MaidConfig.GLOBAL_MAID_SOUND_FREQUENCY.get(), 0, 100)
+                .setDefaultValue(100).setTooltip(Component.translatable("config.touhou_little_maid.maid.global_maid_sound_frequency.tooltip"))
+                .setSaveConsumer(i -> MaidConfig.GLOBAL_MAID_SOUND_FREQUENCY.set(i)).build());
 
-        maid.addEntry(entryBuilder.startDropdownMenu(Component.translatable("config.touhou_little_maid.maid.maid_ntr_item"),
-                        DropdownMenuBuilder.TopCellElementBuilder.ofItemObject(ForgeRegistries.ITEMS.getValue(new ResourceLocation(MaidConfig.MAID_NTR_ITEM.get()))),
-                        DropdownMenuBuilder.CellCreatorBuilder.ofItemObject())
-                .setSelections(BuiltInRegistries.ITEM.stream().sorted(Comparator.comparing(Item::toString)).collect(Collectors.toCollection(LinkedHashSet::new)))
-                .setDefaultValue(Items.STRUCTURE_VOID).setTooltip(Component.translatable("config.touhou_little_maid.maid.maid_ntr_item.tooltip"))
-                .setSaveConsumer(s -> MaidConfig.MAID_NTR_ITEM.set(ForgeRegistries.ITEMS.getKey(s).toString())).build());
+        maid.addEntry(entryBuilder.startBooleanToggle(Component.translatable("config.touhou_little_maid.maid.global_maid_show_chat_bubble"), MaidConfig.GLOBAL_MAID_SHOW_CHAT_BUBBLE.get())
+                .setDefaultValue(true).setTooltip(Component.translatable("config.touhou_little_maid.maid.global_maid_show_chat_bubble.tooltip"))
+                .setSaveConsumer(MaidConfig.GLOBAL_MAID_SHOW_CHAT_BUBBLE::set).build());
+
+        maid.addEntry(entryBuilder.startTextField(Component.translatable("config.touhou_little_maid.maid.maid_tamed_item"),
+                        MaidConfig.MAID_TAMED_ITEM.get())
+                .setDefaultValue(MaidConfig.MAID_TAMED_ITEM.getDefault())
+                .setTooltip(Component.translatable("config.touhou_little_maid.maid.maid_tamed_item.tooltip"))
+                .setSaveConsumer(s -> MaidConfig.MAID_TAMED_ITEM.set(s)).build());
+
+        maid.addEntry(entryBuilder.startTextField(Component.translatable("config.touhou_little_maid.maid.maid_tamed_item"),
+                        MaidConfig.MAID_TEMPTATION_ITEM.get())
+                .setDefaultValue(MaidConfig.MAID_TEMPTATION_ITEM.getDefault())
+                .setTooltip(Component.translatable("config.touhou_little_maid.maid.maid_temptation_item.tooltip"))
+                .setSaveConsumer(s -> MaidConfig.MAID_TEMPTATION_ITEM.set(s)).build());
 
         maid.addEntry(entryBuilder.startIntSlider(Component.translatable("config.touhou_little_maid.maid.maid_work_range"), MaidConfig.MAID_WORK_RANGE.get(), 3, 64)
                 .setDefaultValue(12).setTooltip(Component.translatable("config.touhou_little_maid.maid.maid_work_range.tooltip"))
@@ -77,6 +71,22 @@ public class MenuIntegration {
         maid.addEntry(entryBuilder.startIntSlider(Component.translatable("config.touhou_little_maid.maid.maid_non_home_range"), MaidConfig.MAID_NON_HOME_RANGE.get(), 3, 32)
                 .setDefaultValue(8).setTooltip(Component.translatable("config.touhou_little_maid.maid.maid_non_home_range.tooltip"))
                 .setSaveConsumer(i -> MaidConfig.MAID_NON_HOME_RANGE.set(i)).build());
+
+        maid.addEntry(entryBuilder.startIntSlider(Component.translatable("config.touhou_little_maid.maid.bow_range"), MaidConfig.BOW_RANGE.get(), 8, 192)
+                .setDefaultValue(48).setTooltip(Component.translatable("config.touhou_little_maid.maid.bow_range.tooltip"))
+                .setSaveConsumer(i -> MaidConfig.BOW_RANGE.set(i)).build());
+
+        maid.addEntry(entryBuilder.startIntSlider(Component.translatable("config.touhou_little_maid.maid.cross_bow_range"), MaidConfig.CROSS_BOW_RANGE.get(), 8, 192)
+                .setDefaultValue(64).setTooltip(Component.translatable("config.touhou_little_maid.maid.cross_bow_range.tooltip"))
+                .setSaveConsumer(i -> MaidConfig.CROSS_BOW_RANGE.set(i)).build());
+
+        maid.addEntry(entryBuilder.startIntSlider(Component.translatable("config.touhou_little_maid.maid.danmaku_range"), MaidConfig.DANMAKU_RANGE.get(), 8, 192)
+                .setDefaultValue(64).setTooltip(Component.translatable("config.touhou_little_maid.maid.danmaku_range.tooltip"))
+                .setSaveConsumer(i -> MaidConfig.DANMAKU_RANGE.set(i)).build());
+
+        maid.addEntry(entryBuilder.startIntSlider(Component.translatable("config.touhou_little_maid.maid.trident_range"), MaidConfig.TRIDENT_RANGE.get(), 8, 192)
+                .setDefaultValue(48).setTooltip(Component.translatable("config.touhou_little_maid.maid.trident_range.tooltip"))
+                .setSaveConsumer(i -> MaidConfig.TRIDENT_RANGE.set(i)).build());
 
         maid.addEntry(entryBuilder.startIntField(Component.translatable("config.touhou_little_maid.maid.feed_animal_max_number"), MaidConfig.FEED_ANIMAL_MAX_NUMBER.get())
                 .setMin(6).setMax(65536).setDefaultValue(50).setTooltip(Component.translatable("config.touhou_little_maid.maid.feed_animal_max_number.tooltip"))
@@ -168,17 +178,17 @@ public class MenuIntegration {
                 }).build());
 
         maid.addEntry(entryBuilder.startIntField(Component.translatable("config.touhou_little_maid.maid.maid_gun_long_distance"), MaidConfig.MAID_GUN_LONG_DISTANCE.get())
-                .setDefaultValue(64).setMin(0).setMax(512).requireRestart()
+                .setDefaultValue(64).setMin(0).setMax(512)
                 .setTooltip(Component.translatable("config.touhou_little_maid.maid.maid_gun_long_distance.tooltip"))
                 .setSaveConsumer(i -> MaidConfig.MAID_GUN_LONG_DISTANCE.set(i)).build());
 
         maid.addEntry(entryBuilder.startIntField(Component.translatable("config.touhou_little_maid.maid.maid_gun_medium_distance"), MaidConfig.MAID_GUN_MEDIUM_DISTANCE.get())
-                .setDefaultValue(48).setMin(0).setMax(512).requireRestart()
+                .setDefaultValue(48).setMin(0).setMax(512)
                 .setTooltip(Component.translatable("config.touhou_little_maid.maid.maid_gun_medium_distance.tooltip"))
                 .setSaveConsumer(i -> MaidConfig.MAID_GUN_MEDIUM_DISTANCE.set(i)).build());
 
         maid.addEntry(entryBuilder.startIntField(Component.translatable("config.touhou_little_maid.maid.maid_gun_near_distance"), MaidConfig.MAID_GUN_NEAR_DISTANCE.get())
-                .setDefaultValue(32).setMin(0).setMax(512).requireRestart()
+                .setDefaultValue(32).setMin(0).setMax(512)
                 .setTooltip(Component.translatable("config.touhou_little_maid.maid.maid_gun_near_distance.tooltip"))
                 .setSaveConsumer(i -> MaidConfig.MAID_GUN_NEAR_DISTANCE.set(i)).build());
     }
@@ -252,6 +262,10 @@ public class MenuIntegration {
         misc.addEntry(entryBuilder.startBooleanToggle(Component.translatable("config.touhou_little_maid.misc.use_new_maid_fairy_model"), MiscConfig.USE_NEW_MAID_FAIRY_MODEL.get())
                 .setDefaultValue(true).setTooltip(Component.translatable("config.touhou_little_maid.misc.use_new_maid_fairy_model.tooltip"))
                 .setSaveConsumer(MiscConfig.USE_NEW_MAID_FAIRY_MODEL::set).build());
+
+        misc.addEntry(entryBuilder.startBooleanToggle(Component.translatable("config.touhou_little_maid.misc.invulnerable_particle_effect"), MiscConfig.INVULNERABLE_PARTICLE_EFFECT.get())
+                .setDefaultValue(true).setTooltip(Component.translatable("config.touhou_little_maid.misc.invulnerable_particle_effect.tooltip"))
+                .setSaveConsumer(MiscConfig.INVULNERABLE_PARTICLE_EFFECT::set).build());
     }
 
     private static void vanillaConfig(ConfigBuilder root, ConfigEntryBuilder entryBuilder) {
@@ -272,6 +286,37 @@ public class MenuIntegration {
         vanilla.addEntry(entryBuilder.startBooleanToggle(Component.translatable("config.touhou_little_maid.vanilla.replace_xp_bottle_texture"), VanillaConfig.REPLACE_XP_BOTTLE_TEXTURE.get())
                 .setDefaultValue(true).setTooltip(Component.translatable("config.touhou_little_maid.vanilla.replace_xp_bottle_texture.tooltip"))
                 .setSaveConsumer(VanillaConfig.REPLACE_XP_BOTTLE_TEXTURE::set).build());
+    }
+
+    private static void renderConfig(ConfigBuilder root, ConfigEntryBuilder entryBuilder) {
+        ConfigCategory render = root.getOrCreateCategory(Component.translatable("config.touhou_little_maid.render"));
+
+        render.addEntry(entryBuilder.startBooleanToggle(Component.translatable("config.touhou_little_maid.render.enable_compass_tip"), RenderConfig.ENABLE_COMPASS_TIP.get())
+                .setDefaultValue(true).setSaveConsumer(RenderConfig.ENABLE_COMPASS_TIP::set).build());
+
+        render.addEntry(entryBuilder.startBooleanToggle(Component.translatable("config.touhou_little_maid.render.enable_golden_apple_tip"), RenderConfig.ENABLE_GOLDEN_APPLE_TIP.get())
+                .setDefaultValue(true).setSaveConsumer(RenderConfig.ENABLE_GOLDEN_APPLE_TIP::set).build());
+
+        render.addEntry(entryBuilder.startBooleanToggle(Component.translatable("config.touhou_little_maid.render.enable_potion_tip"), RenderConfig.ENABLE_POTION_TIP.get())
+                .setDefaultValue(true).setSaveConsumer(RenderConfig.ENABLE_POTION_TIP::set).build());
+
+        render.addEntry(entryBuilder.startBooleanToggle(Component.translatable("config.touhou_little_maid.render.enable_milk_bucket_tip"), RenderConfig.ENABLE_MILK_BUCKET_TIP.get())
+                .setDefaultValue(true).setSaveConsumer(RenderConfig.ENABLE_MILK_BUCKET_TIP::set).build());
+
+        render.addEntry(entryBuilder.startBooleanToggle(Component.translatable("config.touhou_little_maid.render.enable_glass_bottle_tip"), RenderConfig.ENABLE_GLASS_BOTTLE_TIP.get())
+                .setDefaultValue(true).setSaveConsumer(RenderConfig.ENABLE_GLASS_BOTTLE_TIP::set).build());
+
+        render.addEntry(entryBuilder.startBooleanToggle(Component.translatable("config.touhou_little_maid.render.enable_name_tag_tip"), RenderConfig.ENABLE_NAME_TAG_TIP.get())
+                .setDefaultValue(true).setSaveConsumer(RenderConfig.ENABLE_NAME_TAG_TIP::set).build());
+
+        render.addEntry(entryBuilder.startBooleanToggle(Component.translatable("config.touhou_little_maid.render.enable_lead_tip"), RenderConfig.ENABLE_LEAD_TIP.get())
+                .setDefaultValue(true).setSaveConsumer(RenderConfig.ENABLE_LEAD_TIP::set).build());
+
+        render.addEntry(entryBuilder.startBooleanToggle(Component.translatable("config.touhou_little_maid.render.enable_saddle_tip"), RenderConfig.ENABLE_SADDLE_TIP.get())
+                .setDefaultValue(true).setSaveConsumer(RenderConfig.ENABLE_SADDLE_TIP::set).build());
+
+        render.addEntry(entryBuilder.startBooleanToggle(Component.translatable("config.touhou_little_maid.render.enable_shears_tip"), RenderConfig.ENABLE_SHEARS_TIP.get())
+                .setDefaultValue(true).setSaveConsumer(RenderConfig.ENABLE_SHEARS_TIP::set).build());
     }
 
     public static void registerModsPage() {

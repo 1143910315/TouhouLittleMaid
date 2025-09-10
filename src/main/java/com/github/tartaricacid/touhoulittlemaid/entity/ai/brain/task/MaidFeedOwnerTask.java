@@ -1,11 +1,14 @@
 package com.github.tartaricacid.touhoulittlemaid.entity.ai.brain.task;
 
+import com.github.tartaricacid.touhoulittlemaid.advancements.maid.TriggerType;
 import com.github.tartaricacid.touhoulittlemaid.api.task.IFeedTask;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
+import com.github.tartaricacid.touhoulittlemaid.init.InitTrigger;
 import com.google.common.collect.ImmutableMap;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.behavior.BehaviorUtils;
@@ -47,8 +50,7 @@ public class MaidFeedOwnerTask extends MaidCheckRateTask {
     @Override
     protected void start(ServerLevel worldIn, EntityMaid maid, long gameTimeIn) {
         LivingEntity owner = maid.getOwner();
-        if (owner instanceof Player && owner.isAlive()) {
-            Player player = (Player) owner;
+        if (owner instanceof Player player && owner.isAlive()) {
             boolean dying = player.getHealth() / player.getMaxHealth() < 0.5f;
             IntList lowestFoods = new IntArrayList();
             IntList lowFoods = new IntArrayList();
@@ -83,6 +85,9 @@ public class MaidFeedOwnerTask extends MaidCheckRateTask {
                 inv.setStackInSlot(slot, task.feed(inv.getStackInSlot(slot), player));
                 maid.swing(InteractionHand.MAIN_HAND);
                 this.setNextCheckTickCount(5);
+                if (maid.getOwner() instanceof ServerPlayer serverPlayer) {
+                    InitTrigger.MAID_EVENT.trigger(serverPlayer, TriggerType.MAID_FEED_PLAYER);
+                }
             });
         }
     }

@@ -1,10 +1,12 @@
 package com.github.tartaricacid.touhoulittlemaid.entity.ai.brain.task;
 
-import com.github.tartaricacid.touhoulittlemaid.entity.chatbubble.ChatBubbleManger;
+import com.github.tartaricacid.touhoulittlemaid.advancements.maid.TriggerType;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
+import com.github.tartaricacid.touhoulittlemaid.init.InitTrigger;
 import com.github.tartaricacid.touhoulittlemaid.util.ItemsUtil;
 import com.google.common.collect.ImmutableMap;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.ai.behavior.BehaviorUtils;
@@ -19,6 +21,7 @@ public class MaidFeedAnimalTask extends MaidCheckRateTask {
     private final float speedModifier;
     private final int maxAnimalCount;
     private Animal feedEntity = null;
+    private long chatBubbleKey = -1;
 
     public MaidFeedAnimalTask(float speedModifier, int maxAnimalCount) {
         super(ImmutableMap.of(MemoryModuleType.NEAREST_VISIBLE_LIVING_ENTITIES, MemoryStatus.VALUE_PRESENT,
@@ -57,11 +60,14 @@ public class MaidFeedAnimalTask extends MaidCheckRateTask {
                     food.shrink(1);
                     maid.swing(InteractionHand.MAIN_HAND);
                     feedEntity.setInLove(null);
+                    if (maid.getOwner() instanceof ServerPlayer serverPlayer) {
+                        InitTrigger.MAID_EVENT.trigger(serverPlayer, TriggerType.MAID_FEED_ANIMAL);
+                    }
                 }
                 feedEntity = null;
             }
         } else {
-            ChatBubbleManger.addInnerChatText(maid, "chat_bubble.touhou_little_maid.inner.feed_animal.max_number");
+            this.chatBubbleKey = maid.getChatBubbleManager().addTextChatBubbleIfTimeout("chat_bubble.touhou_little_maid.inner.feed_animal.max_number", chatBubbleKey);
         }
     }
 

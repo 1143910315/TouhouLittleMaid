@@ -3,7 +3,7 @@ package com.github.tartaricacid.touhoulittlemaid.client.animation.inner;
 import com.github.tartaricacid.touhoulittlemaid.api.entity.IMaid;
 import com.github.tartaricacid.touhoulittlemaid.client.animation.script.GlWrapper;
 import com.github.tartaricacid.touhoulittlemaid.client.animation.script.ModelRendererWrapper;
-import com.github.tartaricacid.touhoulittlemaid.compat.tacz.TacCompat;
+import com.github.tartaricacid.touhoulittlemaid.compat.gun.common.GunClientUtil;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Mob;
@@ -330,6 +330,9 @@ public final class MaidBaseAnimation {
                         armRight.setRotateAngleY(rotation[1]);
                         armRight.setRotateAngleZ(rotation[2]);
                     } else {
+                        if (GunClientUtil.onHoldGun(maid, armLeft, armRight)) {
+                            return;
+                        }
                         armRight.setRotateAngleX((float) (Math.cos(limbSwing * 0.67) * 0.7 * limbSwingAmount));
                         armRight.setRotateAngleY(armRight.getInitRotateAngleY());
                         armRight.setRotateAngleZ((float) (-Math.cos(ageInTicks * 0.05) * 0.05 + armRight.getInitRotateAngleZ()));
@@ -359,8 +362,10 @@ public final class MaidBaseAnimation {
 
                 ModelRendererWrapper armLeft = modelMap.get("armLeft");
                 ModelRendererWrapper armRight = modelMap.get("armRight");
+                Mob entity = maid.asEntity();
 
-                if (maid.isSwingingArms() && !TacCompat.onSwingGun(maid, armLeft, armRight)) {
+                if (!entity.getMainHandItem().isEmpty() && maid.isSwingingArms()
+                    && !GunClientUtil.onHoldGun(maid, armLeft, armRight)) {
                     if (armLeft != null) {
                         armLeft.setRotateAngleX(-1.396f);
                         armLeft.setRotateAngleY(0.785f);

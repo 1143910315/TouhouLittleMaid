@@ -3,12 +3,17 @@ package com.github.tartaricacid.touhoulittlemaid.client.animation.gecko;
 import com.github.tartaricacid.touhoulittlemaid.api.entity.IMaid;
 import com.github.tartaricacid.touhoulittlemaid.client.animation.gecko.condition.*;
 import com.github.tartaricacid.touhoulittlemaid.client.entity.GeckoMaidEntity;
-import com.github.tartaricacid.touhoulittlemaid.compat.tacz.TacCompat;
+import com.github.tartaricacid.touhoulittlemaid.compat.gun.common.GunClientUtil;
+import com.github.tartaricacid.touhoulittlemaid.entity.item.EntityChair;
+import com.github.tartaricacid.touhoulittlemaid.entity.item.EntitySit;
+import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
+import com.github.tartaricacid.touhoulittlemaid.entity.passive.MaidGameRecordManager;
 import com.github.tartaricacid.touhoulittlemaid.geckolib3.core.PlayState;
 import com.github.tartaricacid.touhoulittlemaid.geckolib3.core.builder.AnimationBuilder;
 import com.github.tartaricacid.touhoulittlemaid.geckolib3.core.builder.ILoopType;
 import com.github.tartaricacid.touhoulittlemaid.geckolib3.core.event.predicate.AnimationEvent;
 import com.github.tartaricacid.touhoulittlemaid.geckolib3.resource.GeckoLibCache;
+import com.github.tartaricacid.touhoulittlemaid.network.message.MaidAnimationMessage;
 import it.unimi.dsi.fastutil.objects.ReferenceArrayList;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
@@ -90,7 +95,7 @@ public final class AnimationManager {
                 if (state.getPredicate().test(maid, event)) {
                     String animationName = state.getAnimationName();
                     ILoopType loopType = state.getLoopType();
-                    PlayState gunMainAnimation = TacCompat.playGunMainAnimation(maid, event, animationName, loopType);
+                    PlayState gunMainAnimation = GunClientUtil.playGunMainAnimation(maid, event, animationName, loopType);
                     return Objects.requireNonNullElseGet(gunMainAnimation, () -> playAnimation(event, animationName, loopType));
                 }
             }
@@ -103,14 +108,15 @@ public final class AnimationManager {
         if (maid == null) {
             return PlayState.STOP;
         }
-        if (!maid.asEntity().swinging && !maid.asEntity().isUsingItem()) {
-            ItemStack offhandItem = maid.asEntity().getItemInHand(InteractionHand.OFF_HAND);
+        Mob entity = maid.asEntity();
+        if (!entity.swinging && !entity.isUsingItem()) {
+            ItemStack offhandItem = entity.getItemInHand(InteractionHand.OFF_HAND);
             if (offhandItem.is(Items.CROSSBOW) && CrossbowItem.isCharged(offhandItem)) {
                 return playAnimation(event, "hold_offhand:charged_crossbow", ILoopType.EDefaultLoopTypes.LOOP);
             }
         }
         if (checkSwingAndUse(maid, InteractionHand.OFF_HAND)) {
-            ItemStack offhandItem = maid.asEntity().getItemInHand(InteractionHand.OFF_HAND);
+            ItemStack offhandItem = entity.getItemInHand(InteractionHand.OFF_HAND);
             if (!isSameItem(maid, offhandItem, InteractionHand.OFF_HAND)) {
                 maid.getHandItemsForAnimation()[InteractionHand.OFF_HAND.ordinal()] = offhandItem;
                 playAnimation(event, "empty", ILoopType.EDefaultLoopTypes.LOOP);
@@ -135,7 +141,7 @@ public final class AnimationManager {
         }
         if (!maid.asEntity().swinging && !maid.asEntity().isUsingItem()) {
             ItemStack mainHandItem = maid.asEntity().getItemInHand(InteractionHand.MAIN_HAND);
-            PlayState gunHoldAnimation = TacCompat.playGunHoldAnimation(mainHandItem, event);
+            PlayState gunHoldAnimation = GunClientUtil.playGunHoldAnimation(mainHandItem, event);
             if (gunHoldAnimation != null) {
                 return gunHoldAnimation;
             }
@@ -232,13 +238,37 @@ public final class AnimationManager {
         return PlayState.STOP;
     }
 
-    public PlayState predicateBeg(AnimationEvent<GeckoMaidEntity<?>> event) {
+    public PlayState predicateMisc(AnimationEvent<GeckoMaidEntity<?>> event) {
         IMaid maid = event.getAnimatableEntity().getMaid();
         if (maid == null) {
             return PlayState.STOP;
         }
+        // 赢棋输棋优先
+        if (maid instanceof EntityMaid entityMaid && entityMaid.getVehicle() instanceof EntitySit) {
+            MaidGameRecordManager manager = entityMaid.getGameRecordManager();
+            if (manager.isWin()) {
+                return playAnimation(event, "game_win", ILoopType.EDefaultLoopTypes.LOOP);
+            }
+            if (manager.isLost()) {
+                return playAnimation(event, "game_lost", ILoopType.EDefaultLoopTypes.LOOP);
+            }
+        }
+        // 祈求动画
         if (maid.isBegging()) {
             return playAnimation(event, "beg", ILoopType.EDefaultLoopTypes.LOOP);
+        }
+        // 其他杂项动画，目前仅捡雪球
+        if (maid instanceof EntityMaid entityMaid) {
+            if (entityMaid.animationId == MaidAnimationMessage.PICK_UP_SNOWBALL) {
+                // 捡雪球动画默认 1750 毫秒
+                if (System.currentTimeMillis() - entityMaid.animationRecordTime > 1750) {
+                    entityMaid.animationId = MaidAnimationMessage.NONE;
+                    entityMaid.animationRecordTime = -1L;
+                    // 利用空动画重置 PLAY_ONCE 动画
+                    return playAnimation(event, "empty", ILoopType.EDefaultLoopTypes.PLAY_ONCE);
+                }
+                return playAnimation(event, "pick_up_snowball", ILoopType.EDefaultLoopTypes.PLAY_ONCE);
+            }
         }
         return PlayState.STOP;
     }
@@ -281,6 +311,19 @@ public final class AnimationManager {
             return null;
         }
         ResourceLocation id = event.getAnimatableEntity().getAnimationFileLocation();
+
+        // 如果是坐垫
+        if (vehicle instanceof EntityChair) {
+            ConditionalChair conditionalChair = ConditionManager.getChair(id);
+            if (conditionalChair != null) {
+                String name = conditionalChair.doTest(mob);
+                if (StringUtils.isNoneBlank(name)) {
+                    return playAnimation(event, name, ILoopType.EDefaultLoopTypes.LOOP);
+                }
+            }
+        }
+
+        // 其他情况
         ConditionalVehicle vehicleCondition = ConditionManager.getVehicle(id);
         if (vehicleCondition != null) {
             String name = vehicleCondition.doTest(mob);

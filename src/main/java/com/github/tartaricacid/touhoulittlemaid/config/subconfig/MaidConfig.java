@@ -10,13 +10,23 @@ import static com.github.tartaricacid.touhoulittlemaid.util.ItemsUtil.getItemId;
 
 public final class MaidConfig {
     public static final String TAG_PREFIX = "#";
+
+    public static ForgeConfigSpec.IntValue GLOBAL_MAID_SOUND_FREQUENCY;
+    public static ForgeConfigSpec.BooleanValue GLOBAL_MAID_SHOW_CHAT_BUBBLE;
+
     public static ForgeConfigSpec.ConfigValue<String> MAID_TAMED_ITEM;
     public static ForgeConfigSpec.ConfigValue<String> MAID_TEMPTATION_ITEM;
-    public static ForgeConfigSpec.ConfigValue<String> MAID_NTR_ITEM;
+
     public static ForgeConfigSpec.IntValue MAID_WORK_RANGE;
     public static ForgeConfigSpec.IntValue MAID_IDLE_RANGE;
     public static ForgeConfigSpec.IntValue MAID_SLEEP_RANGE;
     public static ForgeConfigSpec.IntValue MAID_NON_HOME_RANGE;
+
+    public static ForgeConfigSpec.IntValue BOW_RANGE;
+    public static ForgeConfigSpec.IntValue CROSS_BOW_RANGE;
+    public static ForgeConfigSpec.IntValue DANMAKU_RANGE;
+    public static ForgeConfigSpec.IntValue TRIDENT_RANGE;
+
     public static ForgeConfigSpec.IntValue FEED_ANIMAL_MAX_NUMBER;
     public static ForgeConfigSpec.BooleanValue MAID_CHANGE_MODEL;
     public static ForgeConfigSpec.BooleanValue MAID_GOMOKU_OWNER_LIMIT;
@@ -43,14 +53,17 @@ public final class MaidConfig {
     public static void init(ForgeConfigSpec.Builder builder) {
         builder.push("maid");
 
+        builder.comment("This is a global config that applies to all maids: how often maids speak");
+        GLOBAL_MAID_SOUND_FREQUENCY = builder.defineInRange("GlobalMaidSoundFrequency", 100, 0, 100);
+
+        builder.comment("This is a global config that applies to all maids: Whether or not to display chat bubbles");
+        GLOBAL_MAID_SHOW_CHAT_BUBBLE = builder.define("GlobalMaidShowChatBubble", true);
+
         builder.comment("The item that can tamed maid", "Use the registered name of the item directly or write tag name with # as prefix");
         MAID_TAMED_ITEM = builder.define("MaidTamedItem", "minecraft:cake");
 
         builder.comment("The item that can temptation maid", "Use the registered name of the item directly or write tag name with # as prefix");
         MAID_TEMPTATION_ITEM = builder.define("MaidTemptationItem", "minecraft:cake");
-
-        builder.comment("The item that can NTR maid", "Use the registered name of the item directly or write tag name with # as prefix");
-        MAID_NTR_ITEM = builder.define("MaidNtrItem", "minecraft:structure_void");
 
         builder.comment("The max range of maid work mode");
         MAID_WORK_RANGE = builder.defineInRange("MaidWorkRange", 12, 3, 64);
@@ -63,6 +76,18 @@ public final class MaidConfig {
 
         builder.comment("The max range of maid's Non-Home mode");
         MAID_NON_HOME_RANGE = builder.defineInRange("MaidNonHomeRange", 8, 3, 32);
+
+        builder.comment("The max range of maid's bow attack");
+        BOW_RANGE = builder.defineInRange("BowRange", 48, 8, 192);
+
+        builder.comment("The max range of maid's crossbow attack");
+        CROSS_BOW_RANGE = builder.defineInRange("CrossbowRange", 64, 8, 192);
+
+        builder.comment("The max range of maid's danmaku attack");
+        DANMAKU_RANGE = builder.defineInRange("DanmakuRange", 64, 8, 192);
+
+        builder.comment("The max range of maid's trident attack");
+        TRIDENT_RANGE = builder.defineInRange("TridentRange", 48, 8, 192);
 
         builder.comment("The max number of animals around when the maid breeds animals");
         FEED_ANIMAL_MAX_NUMBER = builder.defineInRange("FeedAnimalMaxNumber", 50, 6, 65536);
@@ -80,7 +105,7 @@ public final class MaidConfig {
         MAID_BACKPACK_BLACKLIST = builder.define("MaidBackpackBlackList", Lists.newArrayList());
 
         builder.comment("The entity that the maid will not recognize as targets for attack");
-        MAID_ATTACK_IGNORE = builder.define("MaidAttackIgnore", Lists.newArrayList());
+        MAID_ATTACK_IGNORE = builder.define("MaidAttackIgnore", Lists.newArrayList("mekanism:robit"));
 
         builder.comment("The entity that the maid will not hurt when in ranged attack");
         MAID_RANGED_ATTACK_IGNORE = builder.define("MaidRangedAttackIgnore", Lists.newArrayList());

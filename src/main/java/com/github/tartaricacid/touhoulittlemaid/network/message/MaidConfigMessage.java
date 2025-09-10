@@ -1,9 +1,13 @@
 package com.github.tartaricacid.touhoulittlemaid.network.message;
 
+import com.github.tartaricacid.touhoulittlemaid.advancements.maid.TriggerType;
 import com.github.tartaricacid.touhoulittlemaid.config.subconfig.MaidConfig;
 import com.github.tartaricacid.touhoulittlemaid.entity.ai.brain.MaidSchedule;
+import com.github.tartaricacid.touhoulittlemaid.entity.item.EntityBroom;
 import com.github.tartaricacid.touhoulittlemaid.entity.item.EntitySit;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
+import com.github.tartaricacid.touhoulittlemaid.entity.passive.SchedulePos;
+import com.github.tartaricacid.touhoulittlemaid.init.InitTrigger;
 import com.github.tartaricacid.touhoulittlemaid.network.NetworkHandler;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
@@ -52,8 +56,7 @@ public class MaidConfigMessage {
                     return;
                 }
                 Entity entity = sender.level.getEntity(message.id);
-                if (entity instanceof EntityMaid && ((EntityMaid) entity).isOwnedBy(sender)) {
-                    EntityMaid maid = (EntityMaid) entity;
+                if (entity instanceof EntityMaid maid && maid.isOwnedBy(sender)) {
                     if (maid.isHomeModeEnable() != message.home) {
                         handleHome(message, sender, maid);
                     }
@@ -62,15 +65,19 @@ public class MaidConfigMessage {
                     }
                     if (maid.isRideable() != message.ride) {
                         maid.setRideable(message.ride);
-                    }
-                    if (maid.getVehicle() != null && !(maid.getVehicle() instanceof EntitySit)) {
-                        maid.stopRiding();
+                        Entity vehicle = maid.getVehicle();
+                        if (!message.ride && vehicle != null && !isStopRideBlocklist(vehicle)) {
+                            maid.stopRiding();
+                        }
                     }
                     if (maid.getSchedule() != message.schedule) {
                         maid.setSchedule(message.schedule);
                         maid.getSchedulePos().restrictTo(maid);
                         if (maid.isHomeModeEnable()) {
                             BehaviorUtils.setWalkAndLookTargetMemories(maid, maid.getRestrictCenter(), 0.7f, 3);
+                        }
+                        if (maid.getOwner() instanceof ServerPlayer serverPlayer) {
+                            InitTrigger.MAID_EVENT.trigger(serverPlayer, TriggerType.SWITCH_SCHEDULE);
                         }
                     }
                 }
@@ -79,21 +86,32 @@ public class MaidConfigMessage {
         context.setPacketHandled(true);
     }
 
+    private static boolean isStopRideBlocklist(Entity vehicle) {
+        // 娱乐方块骑乘不受影响
+        boolean isSit = vehicle instanceof EntitySit;
+        // 飞行中的扫帚不能脱离，有风险
+        boolean isBroom = vehicle instanceof EntityBroom broom && !broom.onGround();
+        return isSit || isBroom;
+    }
+
     private static void handleHome(MaidConfigMessage message, ServerPlayer sender, EntityMaid maid) {
         if (message.home) {
-            ResourceLocation dimension = maid.getSchedulePos().getDimension();
-            if (!dimension.equals(maid.level.dimension().location())) {
-                CheckSchedulePosMessage tips = new CheckSchedulePosMessage(Component.translatable("message.touhou_little_maid.check_schedule_pos.dimension"));
-                NetworkHandler.sendToClientPlayer(tips, sender);
-                return;
+            SchedulePos schedulePos = maid.getSchedulePos();
+            if (schedulePos.isConfigured()) {
+                ResourceLocation dimension = schedulePos.getDimension();
+                if (!dimension.equals(maid.level.dimension().location())) {
+                    CheckSchedulePosMessage tips = new CheckSchedulePosMessage(Component.translatable("message.touhou_little_maid.check_schedule_pos.dimension"));
+                    NetworkHandler.sendToClientPlayer(tips, sender);
+                    return;
+                }
+                BlockPos nearestPos = schedulePos.getNearestPos(maid);
+                if (nearestPos != null && nearestPos.distSqr(maid.blockPosition()) > 32 * 32) {
+                    CheckSchedulePosMessage tips = new CheckSchedulePosMessage(Component.translatable("message.touhou_little_maid.check_schedule_pos.too_far"));
+                    NetworkHandler.sendToClientPlayer(tips, sender);
+                    return;
+                }
             }
-            BlockPos nearestPos = maid.getSchedulePos().getNearestPos(maid);
-            if (nearestPos != null && nearestPos.distSqr(maid.blockPosition()) > 32 * 32) {
-                CheckSchedulePosMessage tips = new CheckSchedulePosMessage(Component.translatable("message.touhou_little_maid.check_schedule_pos.too_far"));
-                NetworkHandler.sendToClientPlayer(tips, sender);
-                return;
-            }
-            maid.getSchedulePos().setHomeModeEnable(maid, maid.blockPosition());
+            schedulePos.setHomeModeEnable(maid, maid.blockPosition());
         } else {
             maid.restrictTo(BlockPos.ZERO, MaidConfig.MAID_NON_HOME_RANGE.get());
         }

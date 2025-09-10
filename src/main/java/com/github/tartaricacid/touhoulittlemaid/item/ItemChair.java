@@ -14,6 +14,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
@@ -120,11 +121,6 @@ public class ItemChair extends Item {
         return chair;
     }
 
-    @Override
-    public InteractionResult interactLivingEntity(ItemStack pStack, Player pPlayer, LivingEntity pInteractionTarget, InteractionHand pUsedHand) {
-        return super.interactLivingEntity(pStack, pPlayer, pInteractionTarget, pUsedHand);
-    }
-
     private static void addExtraData(@Nullable Player player, ItemStack stack, EntityChair chair, float rotation) {
         Data data = Data.deserialization(stack.getOrCreateTag());
         chair.setModelId(data.getModelId());
@@ -142,10 +138,12 @@ public class ItemChair extends Item {
     @OnlyIn(Dist.CLIENT)
     public Component getName(ItemStack stack) {
         if (FMLEnvironment.dist == Dist.CLIENT) {
+            // 添加坐垫前缀，方便搜索
+            MutableComponent prefix = Component.translatable("item.touhou_little_maid.chair.prefix");
             ItemChair.Data data = getData(stack);
             if (CustomPackLoader.CHAIR_MODELS.getInfo(data.getModelId()).isPresent()) {
                 String name = CustomPackLoader.CHAIR_MODELS.getInfo(data.getModelId()).get().getName();
-                return ParseI18n.parse(name);
+                return prefix.append(ParseI18n.parse(name));
             }
         }
         return super.getName(stack);

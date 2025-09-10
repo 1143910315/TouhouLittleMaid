@@ -2,6 +2,7 @@ package com.github.tartaricacid.touhoulittlemaid.entity.task;
 
 import com.github.tartaricacid.touhoulittlemaid.TouhouLittleMaid;
 import com.github.tartaricacid.touhoulittlemaid.api.task.IAttackTask;
+import com.github.tartaricacid.touhoulittlemaid.entity.ai.brain.task.MaidUseShieldTask;
 import com.github.tartaricacid.touhoulittlemaid.entity.item.EntityExtinguishingAgent;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.init.InitItems;
@@ -28,7 +29,6 @@ import java.util.function.Predicate;
 
 public class TaskAttack implements IAttackTask {
     public static final ResourceLocation UID = new ResourceLocation(TouhouLittleMaid.MOD_ID, "attack");
-    private static final int MAX_STOP_ATTACK_DISTANCE = 8;
 
     @Override
     public ResourceLocation getUid() {
@@ -48,16 +48,32 @@ public class TaskAttack implements IAttackTask {
     @Override
     public List<Pair<Integer, BehaviorControl<? super EntityMaid>>> createBrainTasks(EntityMaid maid) {
         BehaviorControl<EntityMaid> supplementedTask = StartAttacking.create(this::hasAssaultWeapon, IAttackTask::findFirstValidAttackTarget);
-        BehaviorControl<EntityMaid> findTargetTask = StopAttackingIfTargetInvalid.create(
-                (target) -> !hasAssaultWeapon(maid) || farAway(target, maid));
+        BehaviorControl<EntityMaid> findTargetTask = StopAttackingIfTargetInvalid.create(target -> !hasAssaultWeapon(maid) || farAway(target, maid));
         BehaviorControl<Mob> moveToTargetTask = SetWalkTargetFromAttackTargetIfTargetOutOfReach.create(0.6f);
         BehaviorControl<Mob> attackTargetTask = MeleeAttack.create(20);
+        MaidUseShieldTask maidUseShieldTask = new MaidUseShieldTask();
 
         return Lists.newArrayList(
                 Pair.of(5, supplementedTask),
                 Pair.of(5, findTargetTask),
                 Pair.of(5, moveToTargetTask),
-                Pair.of(5, attackTargetTask)
+                Pair.of(5, attackTargetTask),
+                Pair.of(5, maidUseShieldTask)
+        );
+    }
+
+    @Override
+    public List<Pair<Integer, BehaviorControl<? super EntityMaid>>> createRideBrainTasks(EntityMaid maid) {
+        BehaviorControl<EntityMaid> supplementedTask = StartAttacking.create(this::hasAssaultWeapon, IAttackTask::findFirstValidAttackTarget);
+        BehaviorControl<EntityMaid> findTargetTask = StopAttackingIfTargetInvalid.create(target -> !hasAssaultWeapon(maid) || farAway(target, maid));
+        BehaviorControl<Mob> attackTargetTask = MeleeAttack.create(20);
+        MaidUseShieldTask maidUseShieldTask = new MaidUseShieldTask();
+
+        return Lists.newArrayList(
+                Pair.of(5, supplementedTask),
+                Pair.of(5, findTargetTask),
+                Pair.of(5, attackTargetTask),
+                Pair.of(5, maidUseShieldTask)
         );
     }
 
@@ -84,8 +100,13 @@ public class TaskAttack implements IAttackTask {
         return Lists.newArrayList(Pair.of("assault_weapon", this::hasAssaultWeapon), Pair.of("extinguisher", this::hasExtinguisher));
     }
 
+    @Override
+    public boolean isWeapon(EntityMaid maid, ItemStack stack) {
+        return stack.getAttributeModifiers(EquipmentSlot.MAINHAND).containsKey(Attributes.ATTACK_DAMAGE);
+    }
+
     private boolean hasAssaultWeapon(EntityMaid maid) {
-        return maid.getMainHandItem().getAttributeModifiers(EquipmentSlot.MAINHAND).containsKey(Attributes.ATTACK_DAMAGE);
+        return isWeapon(maid, maid.getMainHandItem());
     }
 
     private boolean hasExtinguisher(EntityMaid maid) {
@@ -93,6 +114,14 @@ public class TaskAttack implements IAttackTask {
     }
 
     private boolean farAway(LivingEntity target, EntityMaid maid) {
-        return maid.distanceTo(target) > MAX_STOP_ATTACK_DISTANCE;
+        if (!target.isAlive()) {
+            return true;
+        }
+        boolean enable = maid.isHomeModeEnable();
+        float radius = maid.getRestrictRadius();
+        if (!enable && maid.getOwner() != null) {
+            return maid.getOwner().distanceTo(target) > radius;
+        }
+        return maid.distanceTo(target) > radius;
     }
 }

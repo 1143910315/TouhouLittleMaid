@@ -2,6 +2,7 @@ package com.github.tartaricacid.touhoulittlemaid.entity.monster;
 
 import com.github.tartaricacid.touhoulittlemaid.config.subconfig.MiscConfig;
 import com.github.tartaricacid.touhoulittlemaid.entity.ai.goal.FairyAttackGoal;
+import com.github.tartaricacid.touhoulittlemaid.entity.ai.goal.FairyNearestAttackableTargetGoal;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.entity.projectile.DanmakuShoot;
 import com.github.tartaricacid.touhoulittlemaid.init.InitPoi;
@@ -9,6 +10,7 @@ import com.github.tartaricacid.touhoulittlemaid.init.InitSounds;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -28,7 +30,6 @@ import net.minecraft.world.entity.ai.navigation.FlyingPathNavigation;
 import net.minecraft.world.entity.ai.navigation.PathNavigation;
 import net.minecraft.world.entity.ai.village.poi.PoiManager;
 import net.minecraft.world.entity.animal.FlyingAnimal;
-import net.minecraft.world.entity.animal.IronGolem;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.monster.RangedAttackMob;
 import net.minecraft.world.entity.player.Player;
@@ -40,6 +41,7 @@ import javax.annotation.Nullable;
 public class EntityFairy extends Monster implements RangedAttackMob, FlyingAnimal, IHasPowerPoint {
     public static final EntityType<EntityFairy> TYPE = EntityType.Builder.<EntityFairy>of(EntityFairy::new, MobCategory.MONSTER)
             .sized(0.6f, 1.5f).clientTrackingRange(10).build("fairy");
+    public static final String RICK = "rick";
 
     private static final String FAIRY_TYPE_TAG_NAME = "FairyType";
     private static final EntityDataAccessor<Integer> FAIRY_TYPE = SynchedEntityData.defineId(EntityFairy.class, EntityDataSerializers.INT);
@@ -82,7 +84,7 @@ public class EntityFairy extends Monster implements RangedAttackMob, FlyingAnima
         goalSelector.addGoal(5, new LookAtPlayerGoal(this, EntityMaid.class, 8.0F));
         goalSelector.addGoal(6, new RandomLookAroundGoal(this));
         targetSelector.addGoal(1, new NearestAttackableTargetGoal<>(this, Player.class, true));
-        targetSelector.addGoal(3, new NearestAttackableTargetGoal<>(this, IronGolem.class, true));
+        targetSelector.addGoal(3, new FairyNearestAttackableTargetGoal<>(this));
     }
 
     @Override
@@ -144,6 +146,11 @@ public class EntityFairy extends Monster implements RangedAttackMob, FlyingAnima
     @Override
     public SpawnGroupData finalizeSpawn(ServerLevelAccessor worldIn, DifficultyInstance difficultyIn, MobSpawnType reason, @Nullable SpawnGroupData spawnDataIn, @Nullable CompoundTag dataTag) {
         this.setFairyTypeOrdinal(random.nextInt(FairyType.values().length));
+        // 有 5% 概率生成 Rick-rolling 彩蛋
+        if (random.nextInt(20) == 0) {
+            this.setCustomName(Component.literal(RICK));
+            this.setCustomNameVisible(true);
+        }
         return super.finalizeSpawn(worldIn, difficultyIn, reason, spawnDataIn, dataTag);
     }
 

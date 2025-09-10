@@ -15,9 +15,9 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class MaidPickupEntitiesSensor extends Sensor<EntityMaid> {
-    private static final int VERTICAL_SEARCH_RANGE = 4;
+import static com.github.tartaricacid.touhoulittlemaid.api.task.IMaidTask.VERTICAL_SEARCH_RANGE;
 
+public class MaidPickupEntitiesSensor extends Sensor<EntityMaid> {
     public MaidPickupEntitiesSensor() {
         super(30);
     }

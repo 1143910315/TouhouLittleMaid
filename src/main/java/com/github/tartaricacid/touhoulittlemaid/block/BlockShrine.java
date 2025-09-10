@@ -1,10 +1,15 @@
 package com.github.tartaricacid.touhoulittlemaid.block;
 
+import com.github.tartaricacid.touhoulittlemaid.advancements.maid.TriggerType;
+import com.github.tartaricacid.touhoulittlemaid.init.InitTrigger;
 import com.github.tartaricacid.touhoulittlemaid.item.ItemFilm;
 import com.github.tartaricacid.touhoulittlemaid.tileentity.TileEntityShrine;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -53,6 +58,7 @@ public class BlockShrine extends BaseEntityBlock {
                 if (!shrine.isEmpty()) {
                     ItemStack storageItem = shrine.extractStorageItem();
                     ItemHandlerHelper.giveItemToPlayer(playerIn, storageItem);
+                    worldIn.playSound(null, pos, SoundEvents.ITEM_FRAME_REMOVE_ITEM, SoundSource.PLAYERS, 1, 1);
                     return InteractionResult.SUCCESS;
                 }
                 return InteractionResult.PASS;
@@ -61,6 +67,7 @@ public class BlockShrine extends BaseEntityBlock {
                 if (shrine.canInsert(playerIn.getMainHandItem())) {
                     shrine.insertStorageItem(ItemHandlerHelper.copyStackWithSize(playerIn.getMainHandItem(), 1));
                     playerIn.getMainHandItem().shrink(1);
+                    worldIn.playSound(null, pos, SoundEvents.ITEM_FRAME_ADD_ITEM, SoundSource.PLAYERS, 1, 1);
                     return InteractionResult.SUCCESS;
                 }
                 if (!worldIn.isClientSide) {
@@ -69,15 +76,21 @@ public class BlockShrine extends BaseEntityBlock {
                 return InteractionResult.PASS;
             }
             if (playerIn.getMainHandItem().isEmpty()) {
-                if (playerIn.getHealth() < (playerIn.getMaxHealth() / 2) + 1) {
-                    if (!worldIn.isClientSide) {
-                        playerIn.sendSystemMessage(Component.translatable("message.touhou_little_maid.shrine.health_low"));
+                // 创造模式玩家可以随意复活
+                if (!playerIn.isCreative()) {
+                    if (playerIn.getHealth() < (playerIn.getMaxHealth() / 2) + 1) {
+                        if (!worldIn.isClientSide) {
+                            playerIn.sendSystemMessage(Component.translatable("message.touhou_little_maid.shrine.health_low"));
+                        }
+                        return InteractionResult.FAIL;
                     }
-                    return InteractionResult.FAIL;
+                    playerIn.setHealth(0.25f);
                 }
-                playerIn.setHealth(0.25f);
                 ItemStack film = shrine.getStorageItem();
                 ItemFilm.filmToMaid(film, worldIn, pos.above(), playerIn);
+                if (playerIn instanceof ServerPlayer serverPlayer) {
+                    InitTrigger.MAID_EVENT.trigger(serverPlayer, TriggerType.SHRINE_REBORN_MAID);
+                }
             }
         }
         return super.use(state, worldIn, pos, playerIn, hand, hit);

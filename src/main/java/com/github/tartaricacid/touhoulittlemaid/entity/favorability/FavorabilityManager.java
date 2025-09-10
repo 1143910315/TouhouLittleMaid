@@ -1,11 +1,14 @@
 package com.github.tartaricacid.touhoulittlemaid.entity.favorability;
 
+import com.github.tartaricacid.touhoulittlemaid.advancements.maid.TriggerType;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
+import com.github.tartaricacid.touhoulittlemaid.init.InitTrigger;
 import com.github.tartaricacid.touhoulittlemaid.network.NetworkHandler;
 import com.github.tartaricacid.touhoulittlemaid.network.message.SpawnParticleMessage;
 import com.google.common.collect.Maps;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.Entity;
@@ -38,10 +41,10 @@ public class FavorabilityManager {
     private static final int LEVEL_2_ATTACK_DAMAGE = 4;
     private static final int LEVEL_3_ATTACK_DAMAGE = 6;
 
-    private static final int LEVEL_0_ATTACK_DISTANCE = 2;
-    private static final int LEVEL_1_ATTACK_DISTANCE = 3;
-    private static final int LEVEL_2_ATTACK_DISTANCE = 5;
-    private static final int LEVEL_3_ATTACK_DISTANCE = 7;
+    private static final int LEVEL_0_ATTACK_DISTANCE_PLUS = 0;
+    private static final int LEVEL_1_ATTACK_DISTANCE_PLUS = 1;
+    private static final int LEVEL_2_ATTACK_DISTANCE_PLUS = 3;
+    private static final int LEVEL_3_ATTACK_DISTANCE_PLUS = 5;
 
     private static final double LEVEL_0_SWEEP_RANGE = 1;
     private static final double LEVEL_1_SWEEP_RANGE = 2;
@@ -174,15 +177,15 @@ public class FavorabilityManager {
         }
     }
 
-    public int getAttackDistanceByPoint(int favorability) {
+    public int getAttackDistancePlusByPoint(int favorability) {
         if (favorability < LEVEL_1_POINT) {
-            return LEVEL_0_ATTACK_DISTANCE;
+            return LEVEL_0_ATTACK_DISTANCE_PLUS;
         } else if (favorability < LEVEL_2_POINT) {
-            return LEVEL_1_ATTACK_DISTANCE;
+            return LEVEL_1_ATTACK_DISTANCE_PLUS;
         } else if (favorability < LEVEL_3_POINT) {
-            return LEVEL_2_ATTACK_DISTANCE;
+            return LEVEL_2_ATTACK_DISTANCE_PLUS;
         } else {
-            return LEVEL_3_ATTACK_DISTANCE;
+            return LEVEL_3_ATTACK_DISTANCE_PLUS;
         }
     }
 
@@ -240,6 +243,15 @@ public class FavorabilityManager {
                 }
                 if (maid.getHealth() > maid.getMaxHealth()) {
                     maid.setHealth(maid.getMaxHealth());
+                }
+                if (maid.getMaxHealth() >= 100 && maid.getOwner() instanceof ServerPlayer serverPlayer) {
+                    InitTrigger.MAID_EVENT.trigger(serverPlayer, TriggerType.MAID_100_HEALTHY);
+                }
+            }
+            if (maid.getOwner() instanceof ServerPlayer serverPlayer) {
+                InitTrigger.MAID_EVENT.trigger(serverPlayer, TriggerType.FAVORABILITY_INCREASED);
+                if (levelAfter == LEVEL_3) {
+                    InitTrigger.MAID_EVENT.trigger(serverPlayer, TriggerType.FAVORABILITY_INCREASED_MAX);
                 }
             }
             maid.playSound(SoundEvents.PLAYER_LEVELUP, 0.5F, maid.getRandom().nextFloat() * 0.1F + 0.9F);

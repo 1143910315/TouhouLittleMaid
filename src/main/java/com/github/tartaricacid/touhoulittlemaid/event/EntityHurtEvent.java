@@ -1,6 +1,5 @@
 package com.github.tartaricacid.touhoulittlemaid.event;
 
-import com.github.tartaricacid.touhoulittlemaid.api.event.MaidHurtEvent;
 import com.github.tartaricacid.touhoulittlemaid.config.subconfig.MaidConfig;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
@@ -16,20 +15,21 @@ import net.minecraftforge.registries.ForgeRegistries;
 @Mod.EventBusSubscriber
 public final class EntityHurtEvent {
     @SubscribeEvent
+    @SuppressWarnings("removal")
     public static void onArrowImpact(ProjectileImpactEvent event) {
         Entity attacker = event.getProjectile().getOwner();
         HitResult ray = event.getRayTraceResult();
-        if (attacker instanceof TamableAnimal && ray instanceof EntityHitResult) {
-            TamableAnimal thrower = (TamableAnimal) attacker;
-            Entity victim = ((EntityHitResult) ray).getEntity();
-            if (victim instanceof TamableAnimal) {
-                TamableAnimal tameable = (TamableAnimal) victim;
+        if (attacker instanceof TamableAnimal thrower && ray instanceof EntityHitResult hitResult) {
+            Entity victim = hitResult.getEntity();
+            if (victim instanceof TamableAnimal tameable) {
+                // 同一主人，那么免伤
                 if (tameable.getOwnerUUID() != null && tameable.getOwnerUUID().equals(thrower.getOwnerUUID())) {
                     event.setCanceled(true);
                 }
             }
-            if (victim instanceof LivingEntity) {
-                if (thrower.isOwnedBy((LivingEntity) victim)) {
+            if (victim instanceof LivingEntity livingVictim) {
+                // 主人和同 Team 玩家免伤
+                if (thrower.isAlliedTo(livingVictim)) {
                     event.setCanceled(true);
                 }
             }

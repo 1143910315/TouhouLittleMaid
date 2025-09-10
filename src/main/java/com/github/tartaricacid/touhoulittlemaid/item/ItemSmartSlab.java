@@ -1,5 +1,6 @@
 package com.github.tartaricacid.touhoulittlemaid.item;
 
+import com.github.tartaricacid.touhoulittlemaid.api.event.MaidAndItemTransformEvent;
 import com.github.tartaricacid.touhoulittlemaid.capability.MaidNumCapabilityProvider;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.init.InitEntities;
@@ -19,11 +20,13 @@ import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.tooltip.TooltipComponent;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Rarity;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.common.MinecraftForge;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -35,12 +38,15 @@ public class ItemSmartSlab extends AbstractStoreMaidItem {
     private final Type type;
 
     public ItemSmartSlab(Type type) {
-        super((new Properties()).stacksTo(1));
+        super((new Properties()).stacksTo(1).rarity(Rarity.RARE));
         this.type = type;
     }
 
     public static void storeMaidData(ItemStack stack, EntityMaid maid) {
-        maid.saveWithoutId(stack.getOrCreateTagElement(MAID_INFO));
+        CompoundTag data = stack.getOrCreateTagElement(MAID_INFO);
+        maid.saveWithoutId(data);
+        var event = new MaidAndItemTransformEvent.ToItem(maid, stack, data);
+        MinecraftForge.EVENT_BUS.post(event);
     }
 
     @Override
@@ -84,6 +90,10 @@ public class ItemSmartSlab extends AbstractStoreMaidItem {
             if (!player.getUUID().equals(ownerUid)) {
                 return InteractionResult.FAIL;
             }
+
+            var event = new MaidAndItemTransformEvent.ToMaid(maid, stack, maidData);
+            MinecraftForge.EVENT_BUS.post(event);
+
             maid.load(maidData);
             maid.moveTo(context.getClickedPos().above(), 0, 0);
             if (worldIn instanceof ServerLevel) {

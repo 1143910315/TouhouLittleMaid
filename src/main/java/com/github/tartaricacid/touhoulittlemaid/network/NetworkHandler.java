@@ -70,9 +70,9 @@ public final class NetworkHandler {
                 Optional.of(NetworkDirection.PLAY_TO_CLIENT));
         CHANNEL.registerMessage(22, SetMaidSoundIdMessage.class, SetMaidSoundIdMessage::encode, SetMaidSoundIdMessage::decode, SetMaidSoundIdMessage::handle,
                 Optional.of(NetworkDirection.PLAY_TO_SERVER));
-        CHANNEL.registerMessage(23, ChessDataToClientMessage.class, ChessDataToClientMessage::encode, ChessDataToClientMessage::decode, ChessDataToClientMessage::handle,
+        CHANNEL.registerMessage(23, GomokuToClientMessage.class, GomokuToClientMessage::encode, GomokuToClientMessage::decode, GomokuToClientMessage::handle,
                 Optional.of(NetworkDirection.PLAY_TO_CLIENT));
-        CHANNEL.registerMessage(24, ChessDataToServerMessage.class, ChessDataToServerMessage::encode, ChessDataToServerMessage::decode, ChessDataToServerMessage::handle,
+        CHANNEL.registerMessage(24, GomokuToServerMessage.class, GomokuToServerMessage::encode, GomokuToServerMessage::decode, GomokuToServerMessage::handle,
                 Optional.of(NetworkDirection.PLAY_TO_SERVER));
         CHANNEL.registerMessage(25, FoxScrollMessage.class, FoxScrollMessage::encode, FoxScrollMessage::decode, FoxScrollMessage::handle,
                 Optional.of(NetworkDirection.PLAY_TO_CLIENT));
@@ -84,16 +84,58 @@ public final class NetworkHandler {
                 Optional.of(NetworkDirection.PLAY_TO_CLIENT));
         CHANNEL.registerMessage(29, ServantBellSetMessage.class, ServantBellSetMessage::encode, ServantBellSetMessage::decode, ServantBellSetMessage::handle,
                 Optional.of(NetworkDirection.PLAY_TO_SERVER));
-        CHANNEL.registerMessage(30, SetMonsterListMessage.class, SetMonsterListMessage::encode, SetMonsterListMessage::decode, SetMonsterListMessage::handle,
+        CHANNEL.registerMessage(30, SetAttackListMessage.class, SetAttackListMessage::encode, SetAttackListMessage::decode, SetAttackListMessage::handle,
                 Optional.of(NetworkDirection.PLAY_TO_SERVER));
-        CHANNEL.registerMessage(31, ToggleSideTabMessage.class, ToggleSideTabMessage::encode, ToggleSideTabMessage::decode, ToggleSideTabMessage::handle,
+        CHANNEL.registerMessage(31, MaidSubConfigMessage.class, MaidSubConfigMessage::encode, MaidSubConfigMessage::decode, MaidSubConfigMessage::handle,
                 Optional.of(NetworkDirection.PLAY_TO_SERVER));
         CHANNEL.registerMessage(32, RefreshMaidBrainMessage.class, RefreshMaidBrainMessage::encode, RefreshMaidBrainMessage::decode, RefreshMaidBrainMessage::handle,
                 Optional.of(NetworkDirection.PLAY_TO_SERVER));
+        CHANNEL.registerMessage(33, CChessToClientMessage.class, CChessToClientMessage::encode, CChessToClientMessage::decode, CChessToClientMessage::handle,
+                Optional.of(NetworkDirection.PLAY_TO_CLIENT));
+        CHANNEL.registerMessage(34, CChessToServerMessage.class, CChessToServerMessage::encode, CChessToServerMessage::decode, CChessToServerMessage::handle,
+                Optional.of(NetworkDirection.PLAY_TO_SERVER));
+        CHANNEL.registerMessage(35, WChessToClientMessage.class, WChessToClientMessage::encode, WChessToClientMessage::decode, WChessToClientMessage::handle,
+                Optional.of(NetworkDirection.PLAY_TO_CLIENT));
+        CHANNEL.registerMessage(36, WChessToServerMessage.class, WChessToServerMessage::encode, WChessToServerMessage::decode, WChessToServerMessage::handle,
+                Optional.of(NetworkDirection.PLAY_TO_SERVER));
+        CHANNEL.registerMessage(37, SendUserChatMessage.class, SendUserChatMessage::encode, SendUserChatMessage::decode, SendUserChatMessage::handle,
+                Optional.of(NetworkDirection.PLAY_TO_SERVER));
+        CHANNEL.registerMessage(38, TTSAudioToClientMessage.class, TTSAudioToClientMessage::encode, TTSAudioToClientMessage::decode, TTSAudioToClientMessage::handle,
+                Optional.of(NetworkDirection.PLAY_TO_CLIENT));
+        // CHANNEL.registerMessage(39, SyncAiSettingMessage.class, SyncAiSettingMessage::encode, SyncAiSettingMessage::decode, SyncAiSettingMessage::handle,
+        //         Optional.of(NetworkDirection.PLAY_TO_CLIENT));
+        // 仅安装 YSM 后才会发送此包
+        CHANNEL.registerMessage(40, YsmMaidModelMessage.class, YsmMaidModelMessage::encode, YsmMaidModelMessage::decode, YsmMaidModelMessage::handle,
+                Optional.of(NetworkDirection.PLAY_TO_SERVER));
+        CHANNEL.registerMessage(41, SaveMaidAIDataMessage.class, SaveMaidAIDataMessage::encode, SaveMaidAIDataMessage::decode, SaveMaidAIDataMessage::handle,
+                Optional.of(NetworkDirection.PLAY_TO_SERVER));
+        // CHANNEL.registerMessage(42, GetMaidAIDataMessage.class, GetMaidAIDataMessage::encode, GetMaidAIDataMessage::decode, GetMaidAIDataMessage::handle,
+        //         Optional.of(NetworkDirection.PLAY_TO_SERVER));
+        // CHANNEL.registerMessage(43, OpenMaidAIDataScreenMessage.class, OpenMaidAIDataScreenMessage::encode, OpenMaidAIDataScreenMessage::decode, OpenMaidAIDataScreenMessage::handle,
+        //        Optional.of(NetworkDirection.PLAY_TO_CLIENT));
+        // 仅安装 YSM 后才会发送此包
+        CHANNEL.registerMessage(44, SyncYsmMaidDataMessage.class, SyncYsmMaidDataMessage::encode, SyncYsmMaidDataMessage::decode, SyncYsmMaidDataMessage::handle,
+                Optional.of(NetworkDirection.PLAY_TO_CLIENT));
+        CHANNEL.registerMessage(45, TTSSystemAudioToClientMessage.class, TTSSystemAudioToClientMessage::encode, TTSSystemAudioToClientMessage::decode, TTSSystemAudioToClientMessage::handle,
+                Optional.of(NetworkDirection.PLAY_TO_CLIENT));
+        CHANNEL.registerMessage(46, ClearMaidAIDataMessage.class, ClearMaidAIDataMessage::encode, ClearMaidAIDataMessage::decode, ClearMaidAIDataMessage::handle,
+                Optional.of(NetworkDirection.PLAY_TO_SERVER));
+        CHANNEL.registerMessage(47, OpenMaidGuiMessage.class, OpenMaidGuiMessage::encode, OpenMaidGuiMessage::decode, OpenMaidGuiMessage::handle,
+                Optional.of(NetworkDirection.PLAY_TO_SERVER));
+        CHANNEL.registerMessage(48, OpenPlayerInventoryMessage.class, OpenPlayerInventoryMessage::encode, OpenPlayerInventoryMessage::decode, OpenPlayerInventoryMessage::handle,
+                Optional.of(NetworkDirection.PLAY_TO_CLIENT));
+        CHANNEL.registerMessage(49, DismountMessage.class, DismountMessage::encode, DismountMessage::decode, DismountMessage::handle,
+                Optional.of(NetworkDirection.PLAY_TO_SERVER));
+        CHANNEL.registerMessage(50, MaidAnimationMessage.class, MaidAnimationMessage::encode, MaidAnimationMessage::decode, MaidAnimationMessage::handle,
+                Optional.of(NetworkDirection.PLAY_TO_CLIENT));
     }
 
     public static void sendToClientPlayer(Object message, Player player) {
         CHANNEL.send(PacketDistributor.PLAYER.with(() -> (ServerPlayer) player), message);
+    }
+
+    public static void sendToTrackingEntity(Object message, final Entity centerEntity) {
+        CHANNEL.send(PacketDistributor.TRACKING_ENTITY.with(() -> centerEntity), message);
     }
 
     public static void sendToNearby(Level world, BlockPos pos, Object toSend) {

@@ -1,18 +1,20 @@
 package com.github.tartaricacid.touhoulittlemaid.entity.ai.brain.task;
 
+import com.github.tartaricacid.touhoulittlemaid.advancements.maid.TriggerType;
 import com.github.tartaricacid.touhoulittlemaid.api.task.meal.IMaidMeal;
 import com.github.tartaricacid.touhoulittlemaid.api.task.meal.MaidMealType;
-import com.github.tartaricacid.touhoulittlemaid.entity.chatbubble.ChatBubbleManger;
 import com.github.tartaricacid.touhoulittlemaid.entity.favorability.Type;
 import com.github.tartaricacid.touhoulittlemaid.entity.item.EntitySit;
 import com.github.tartaricacid.touhoulittlemaid.entity.passive.EntityMaid;
 import com.github.tartaricacid.touhoulittlemaid.entity.task.meal.MaidMealManager;
+import com.github.tartaricacid.touhoulittlemaid.init.InitTrigger;
 import com.github.tartaricacid.touhoulittlemaid.tileentity.TileEntityPicnicMat;
 import com.google.common.collect.ImmutableMap;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.items.IItemHandlerModifiable;
@@ -25,6 +27,8 @@ import java.util.List;
 public class MaidHomeMealTask extends MaidCheckRateTask {
     private static final int MAX_DELAY_TIME = 50;
     private @Nullable TileEntityPicnicMat tmpPicnicMat = null;
+    private long handFullBubbleKey = -1;
+    private long mealEmptyBubbleKey = -1;
 
     public MaidHomeMealTask() {
         super(ImmutableMap.of());
@@ -69,9 +73,10 @@ public class MaidHomeMealTask extends MaidCheckRateTask {
         // 先对把手上的物品放入背包做预处理：如果放入背包后，手上还有剩余，那就不执行后续吃的逻辑并添加气泡提示
         ItemStack itemInHand = maid.getItemInHand(eanHand);
         IItemHandlerModifiable availableInv = maid.getAvailableBackpackInv();
-        ItemStack leftoverStack = ItemHandlerHelper.insertItemStacked(availableInv, itemInHand.copy(), true);
+        ItemStack handItemCopy = itemInHand.copy();
+        ItemStack leftoverStack = ItemHandlerHelper.insertItemStacked(availableInv, handItemCopy, true);
         if (!leftoverStack.isEmpty()) {
-            ChatBubbleManger.addInnerChatText(maid, "chat_bubble.touhou_little_maid.inner.home_meal.two_hand_is_full");
+            this.handFullBubbleKey = maid.getChatBubbleManager().addTextChatBubbleIfTimeout("chat_bubble.touhou_little_maid.inner.home_meal.two_hand_is_full", handFullBubbleKey);
             return;
         }
 
@@ -93,7 +98,7 @@ public class MaidHomeMealTask extends MaidCheckRateTask {
         // 如果没搜索到，不执行后续吃的逻辑
         int size = candidateFood.size();
         if (size == 0) {
-            ChatBubbleManger.addInnerChatText(maid, "chat_bubble.touhou_little_maid.inner.home_meal.meal_is_empty");
+            this.mealEmptyBubbleKey = maid.getChatBubbleManager().addTextChatBubbleIfTimeout("chat_bubble.touhou_little_maid.inner.home_meal.meal_is_empty", this.mealEmptyBubbleKey);
             return;
         }
 
@@ -103,12 +108,15 @@ public class MaidHomeMealTask extends MaidCheckRateTask {
         candidateFood.intStream().skip(skipCount).findFirst().ifPresent(slotIndex -> {
             ItemStack outputStack = handler.extractItem(slotIndex, 1, false);
             this.tmpPicnicMat.refresh();
-            ItemHandlerHelper.insertItemStacked(availableInv, itemInHand.copy(), false);
             maid.setItemInHand(hand, outputStack);
             ItemStack refreshItemInHand = maid.getItemInHand(hand);
             for (IMaidMeal maidMeal : maidMeals) {
                 if (maidMeal.canMaidEat(maid, refreshItemInHand, hand)) {
+                    maid.memoryHandItemStack(handItemCopy);
                     maidMeal.onMaidEat(maid, refreshItemInHand, hand);
+                    if (maid.getOwner() instanceof ServerPlayer serverPlayer) {
+                        InitTrigger.MAID_EVENT.trigger(serverPlayer, TriggerType.MAID_PICNIC_EAT);
+                    }
                     return;
                 }
             }
